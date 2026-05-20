@@ -17,7 +17,7 @@ typedef struct {
 } Equipment;
 
 typedef struct Node {
-    Equipment date;
+    Equipment data;
     struct Node* next;
 } Node;
 
@@ -34,6 +34,81 @@ void readString(char *variable, int size) {
     }
 }
 
+Node* addEquipment(Node* list) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    if (newNode == NULL) {
+        printf("Memory allocation failed. Unable to add equipment.\n");
+        return list;
+    }
+
+    newNode->data.id = nextEquipementId++;
+
+    printf("\n--- REGISTER NEW EQUIPMENT (ID: %d) ---\n", newNode->data.id);
+    printf("Name: ");
+    readString(newNode->data.name, sizeof(newNode->data.name));
+    printf("Type: ");
+    readString(newNode->data.type, sizeof(newNode->data.type));
+    printf("Brand: ");
+    readString(newNode->data.brand, sizeof(newNode->data.brand));
+    printf("Model: ");
+    readString(newNode->data.model, sizeof(newNode->data.model));
+    printf("IP Address: ");
+    readString(newNode->data.ip, sizeof(newNode->data.ip));
+    printf("MAC Address: ");
+    readString(newNode->data.mac, sizeof(newNode->data.mac));
+    printf("Location: ");
+    readString(newNode->data.location, sizeof(newNode->data.location));
+
+// Set default status
+    strcpy(newNode->data.status, "Operational");
+
+// Set last verification date to current date
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    printf(newNode->data.last_verification, "%02d/%02d/%04d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
+
+    newNode->next = list;
+
+    printf("\n>>> Equipment '%s' successfully registered on %s!\n", newNode->data.name, newNode->data.last_verification);
+    return newNode;
+}
+
+Node* menuInventory(Node* list) {
+    int option;
+
+    do {
+        printf("\n=========================================");
+        printf("\n       MINI NOC SYSTEM - INVENTORY");
+        printf("\n=========================================");
+        printf("\n 1. Add New Equipment");
+        printf("\n 0. Return to Main Menu");
+        printf("\n=========================================");
+        printf("\nChoose an option: ");
+        
+        if(scanf("%d", &option) != 1) {
+            printf("Invalid input. Please enter a number.\n");
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF);
+            continue;
+        }
+        getchar();
+
+        switch (option) {
+            case 1:
+                list = addEquipment(list);
+                break;
+            case 0:
+                printf("\nReturning to main menu...\n");
+                break;
+            default:
+                printf("\nInvalid option. Please try again.\n");
+                break;
+        }
+    } while (option != 0);
+
+    return list;
+}
+
 int main() {
     Node* equipmentList = NULL;
     int option;
@@ -42,6 +117,7 @@ int main() {
         printf("\n=========================================");
         printf("\n       MINI NOC SYSTEM - MAIN MENU");
         printf("\n=========================================");
+        printf("\n 1. Inventory Management");
         printf("\n 0. Exit Program");
         printf("\n=========================================");
         printf("\nChoose an option: ");
@@ -55,8 +131,11 @@ int main() {
         getchar();
 
         switch (option) {
+            case 1:
+                equipmentList = menuInventory(equipmentList);
+                break;
             case 0:
-                printf("Exiting program. Goodbye!\n");
+                printf("\nExiting program. Goodbye!\n");
                 break;
             default:
                 printf("Invalid option. Please try again.\n");
