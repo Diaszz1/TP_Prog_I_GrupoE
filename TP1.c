@@ -73,6 +73,49 @@ Node* addEquipment(Node* list) {
     return newNode;
 }
 
+Node* removeEquipment(Node* list) {
+    if (list == NULL) {
+        printf("The inventory is empty.\n");
+        return list;
+    }
+
+    int targetId;
+    printf("\n--- REMOVE EQUIPMENT ---\n");
+    printf("Enter the ID of the equipment to remove: ");
+    if(scanf("%d", &targetId) != 1) {
+        printf("Invalid input. Please enter a number.\n");
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF);
+        return list;
+    }
+    getchar();
+
+    Node* current = list;
+    Node* previous = NULL;
+
+    while (current != NULL && current->data.id != targetId) {
+        previous = current;
+        current = current->next;
+    }
+
+    if (current == NULL) {
+        printf("\n>>> Equipment with ID %d not found.\n", targetId);
+        return list;
+    }
+
+    if (previous == NULL) {
+        list = current->next;
+    } else {
+        previous->next = current->next;
+    }
+
+    printf("\n>>> Equipment with ID %d removed successfully.\n", targetId);
+
+    free(current);
+
+    return list;
+}
+
 Node* menuInventory(Node* list) {
     int option;
 
@@ -81,6 +124,7 @@ Node* menuInventory(Node* list) {
         printf("\n       MINI NOC SYSTEM - INVENTORY");
         printf("\n=========================================");
         printf("\n 1. Add New Equipment");
+        printf("\n 2. Remove Equipment");
         printf("\n 0. Return to Main Menu");
         printf("\n=========================================");
         printf("\nChoose an option: ");
@@ -96,6 +140,9 @@ Node* menuInventory(Node* list) {
         switch (option) {
             case 1:
                 list = addEquipment(list);
+                break;
+            case 2:
+                list = removeEquipment(list);
                 break;
             case 0:
                 printf("\nReturning to main menu...\n");
