@@ -287,6 +287,128 @@ Node* removeEquipment(Node* list) {
     return list;
 }
 
+void editEquipment(Node* list) {
+    if (list == NULL) {
+        printf("The inventory is empty. Nothing to edit.\n");
+        return;
+    }
+
+    displayEquipment(list);
+    
+    int targetId;
+    printf("\n--- EDIT EQUIPMENT DETAILS---\n");
+    printf("Enter the ID of the equipment to edit: ");
+    if(scanf("%d", &targetId) != 1) {
+        printf("Invalid ID Format:\n");
+        while (getchar() != '\n');
+        return;
+    }
+    getchar();
+
+    Node* current = list;
+    while (current != NULL && current->data.id != targetId) {
+        current = current->next;
+    }
+
+    if (current == NULL) {
+        printf("\n>>> Equipment with ID %d not found.\n", targetId);
+        return;
+    }
+
+    printf("\nEditing details for equipment '%s' (ID: %d)\n", current->data.name, current->data.id);
+    char choice;
+    int dataChanged = 0;
+
+    printf("\nCurrent Name: %s\n", current->data.name);
+    printf("Change name? (y/n): ");
+    scanf("%c", &choice); getchar();
+    if (choice == 'y' || choice == 'Y') {
+        printf("Enter New Name: ");
+        readString(current->data.name, sizeof(current->data.name));
+        dataChanged = 1;
+    }
+
+    printf("\nCurrent Type: %s\n", current->data.type);
+    printf("Change type? (y/n): ");
+    scanf("%c", &choice); getchar();
+    if (choice == 'y' || choice == 'Y') {
+        chooseEquipmentType(current->data.type);
+        dataChanged = 1;
+    }
+
+    printf("\nCurrent Brand: %s\n", current->data.brand);
+    printf("Change brand? (y/n): ");
+    scanf("%c", &choice); getchar();
+    if (choice == 'y' || choice == 'Y') {
+        printf("Enter New Brand: ");
+        readString(current->data.brand, sizeof(current->data.brand));
+        dataChanged = 1;
+    }
+
+    printf("\nCurrent Model: %s\n", current->data.model);
+    printf("Change model? (y/n): ");
+    scanf("%c", &choice); getchar();
+    if (choice == 'y' || choice == 'Y') {
+        printf("Enter New Model: ");
+        readString(current->data.model, sizeof(current->data.model));
+        dataChanged = 1;
+    }
+
+    printf("\nCurrent IP Address: %s\n", current->data.ip);
+    printf("Change IP address? (y/n): ");
+    scanf("%c", &choice); getchar();
+    if (choice == 'y' || choice == 'Y') {
+        do {
+            printf("Enter New IP Address (e.g., 192.168.1.1): ");
+            readString(current->data.ip, sizeof(current->data.ip));
+            if (!isValidIP(current->data.ip)) {
+                printf("Invalid IPv4 format. Please enter a valid IP address.\n");
+            }
+        } while (!isValidIP(current->data.ip));
+        dataChanged = 1;
+    }
+
+    printf("\nCurrent MAC Address: %s\n", current->data.mac);
+    printf("Change MAC address? (y/n): ");
+    scanf("%c", &choice); getchar();
+    if (choice == 'y' || choice == 'Y') {
+        do {
+            printf("Enter New MAC Address (e.g., 00:1A:2B:3C:4D:5E): ");
+            readString(current->data.mac, sizeof(current->data.mac));
+            if (!isValidMAC(current->data.mac)) {
+                printf("Invalid MAC format. Please enter a valid MAC address.\n");
+            }
+        } while (!isValidMAC(current->data.mac));
+        dataChanged = 1;
+    }
+
+    printf("\nCurrent Location: %s\n", current->data.location);
+    printf("Change location? (y/n): ");
+    scanf("%c", &choice); getchar();
+    if (choice == 'y' || choice == 'Y') {
+        printf("Enter New Location: ");
+        readString(current->data.location, sizeof(current->data.location));
+        dataChanged = 1;
+    }
+
+    printf("\nCurrent Status: %s\n", current->data.status);
+    printf("Change status? (y/n): ");
+    scanf("%c", &choice); getchar();
+    if (choice == 'y' || choice == 'Y') {
+        chooseEquipmentStatus(current->data.status);
+        dataChanged = 1;
+    }
+
+    if (dataChanged) {
+        time_t t = time(NULL);
+        struct tm tm = *localtime(&t);
+        sprintf(current->data.last_verification, "%02d/%02d/%04d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
+        printf("\n>>> Modifications saved! Verification timestamp updated to %s!\n", current->data.last_verification);
+    } else {
+        printf("\n>>> No changes made to equipment details.\n");
+    }
+}
+
 Node* menuInventory(Node* list) {
     int option;
 
@@ -296,6 +418,7 @@ Node* menuInventory(Node* list) {
         printf("\n=========================================");
         printf("\n 1. Add New Equipment");
         printf("\n 2. Remove Equipment");
+        printf("\n 3. Edit Equipment Details");
         printf("\n 0. Return to Main Menu");
         printf("\n=========================================");
         printf("\nChoose an option: ");
@@ -314,6 +437,9 @@ Node* menuInventory(Node* list) {
                 break;
             case 2:
                 list = removeEquipment(list);
+                break;
+            case 3:
+                editEquipment(list);
                 break;
             case 0:
                 printf("\nReturning to main menu...\n");
