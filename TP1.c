@@ -141,6 +141,42 @@ void chooseEquipmentStatus(char *targetDestination) {
     } while (choice < 1 || choice > 4);
 }
 
+int isValidIP(const char *ip) {
+    int num1, num2, num3, nunm4;
+    char extra;
+
+    if (sscanf(ip, "%d.%d.%d.%d%c", &num1, &num2, &num3, &nunm4, &extra) != 4) {
+        return 0;
+    }
+    if (num1 < 0 || num1 > 255 || num2 < 0 || num2 > 255 || num3 < 0 || num3 > 255 || nunm4 < 0 || nunm4 > 255) {
+        return 0;
+    }
+    return 1;
+}
+
+int isValidMAC(const char *mac) {
+    int i;
+
+    if (strlen(mac) != 17) {
+        return 0;
+    }
+
+    for (i = 0; i < 17; i++) {
+        if (i == 2 || i == 5 || i == 8 || i == 11 || i == 14) {
+            if (mac[i] != ':' && mac[i] != '-') {
+                return 0;
+            }
+        } else {
+            char c = mac[i];
+            if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) {
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
+
 Node* addEquipment(Node* list) {
     Node* newNode = (Node*)malloc(sizeof(Node));
     if (newNode == NULL) {
@@ -160,10 +196,23 @@ Node* addEquipment(Node* list) {
     readString(newNode->data.brand, sizeof(newNode->data.brand));
     printf("Model: ");
     readString(newNode->data.model, sizeof(newNode->data.model));
-    printf("IP Address: ");
-    readString(newNode->data.ip, sizeof(newNode->data.ip));
-    printf("MAC Address: ");
-    readString(newNode->data.mac, sizeof(newNode->data.mac));
+    
+    do {
+        printf("IP Address (e.g., 192.168.1.50): ");
+        readString(newNode->data.ip, sizeof(newNode->data.ip));
+        if (!isValidIP(newNode->data.ip)) {
+            printf("Invalid IPv4 format. Please enter a valid IP address");
+        }
+    } while (!isValidIP(newNode->data.ip));
+
+    do {
+        printf("MAC Address (e.g., 00:1A:2B:3C:4D:5E): ");
+        readString(newNode->data.mac, sizeof(newNode->data.mac));
+        if (!isValidMAC(newNode->data.mac)) {
+            printf("Invalid MAC format (Use XX:XX:XX:XX:XX:XX). Please enter a valid MAC address\n");
+        }
+    } while (!isValidMAC(newNode->data.mac));
+    
     printf("Location: ");
     readString(newNode->data.location, sizeof(newNode->data.location));
 
