@@ -29,6 +29,9 @@ void readString(char *variable, int size) {
     if (len > 0 && variable[len - 1] == '\n') {
         variable[len - 1] = '\0';
     } else {
+
+        printf("Input exceeded limit. Automatically truncated to %d characters.\n", size - 1);
+
         int c;
         while ((c = getchar()) != '\n' && c != EOF);
     }
@@ -43,14 +46,14 @@ void displayEquipment(Node* list) {
 
     printf("\n--- CURRENT EQUIPMENT INVENTORY ---\n");
     printf("%-5s | %-20s | %-15s | %-15s\n", "ID", "Name", "Type", "Status");
-    printf("--------------------------------─────────────────────────────\n");
+    printf("-----------------------------------------------------------------\n");
 
     Node* current = list;
     while (current != NULL) {
         printf("%-5d | %-20s | %-15s | %-15s\n", current->data.id, current->data.name, current->data.type, current->data.status);
         current = current->next;
     }
-    printf("-------------------------------------------------------------\n");
+    printf("-----------------------------------------------------------------\n");
 }
 
 void chooseEquipmentType(char *targetDestination) {
@@ -212,7 +215,7 @@ Node* addEquipment(Node* list) {
             printf("Invalid MAC format (Use XX:XX:XX:XX:XX:XX). Please enter a valid MAC address\n");
         }
     } while (!isValidMAC(newNode->data.mac));
-    
+
     printf("Location: ");
     readString(newNode->data.location, sizeof(newNode->data.location));
 
