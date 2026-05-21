@@ -65,7 +65,7 @@ Node* addEquipment(Node* list) {
 // Set last verification date to current date
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
-    printf(newNode->data.last_verification, "%02d/%02d/%04d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
+    sprintf(newNode->data.last_verification, "%02d/%02d/%04d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
 
     newNode->next = list;
 
@@ -105,6 +105,12 @@ Node* removeEquipment(Node* list) {
         return list;
     }
 
+    if (strcmp(current->data.status, "Operational") != 0) {
+        printf("\n>>> Cannot remove equipment with ID %d because it is currently '%s'.\n", current->data.id, current->data.status);
+        printf(">>> Only 'Operational' equipment can be removed from inventory.\n");
+        return list;
+    }
+
     if (previous == NULL) {
         list = current->next;
     } else {
@@ -125,12 +131,12 @@ void displayEquipment(Node* list) {
     }
 
     printf("\n--- CURRENT EQUIPMENT INVENTORY ---\n");
-    printf("%-5s | %-20s | %-15s | %-15s\n", "ID", "Name", "Type", "Brand");
+    printf("%-5s | %-20s | %-15s | %-15s\n", "ID", "Name", "Type", "Status");
     printf("--------------------------------─────────────────────────────\n");
 
     Node* current = list;
     while (current != NULL) {
-        printf("%-5d | %-20s | %-15s | %-15s\n", current->data.id, current->data.name, current->data.type, current->data.brand);
+        printf("%-5d | %-20s | %-15s | %-15s\n", current->data.id, current->data.name, current->data.type, current->data.status);
         current = current->next;
     }
     printf("-------------------------------------------------------------\n");
