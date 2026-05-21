@@ -409,6 +409,44 @@ void editEquipment(Node* list) {
     }
 }
 
+void changeEquipmentStatus(Node* list) {
+    if (list == NULL) {
+        printf("The inventory is empty. No equipment to update.\n");
+        return;
+    }
+
+    displayEquipment(list);
+
+    int targetId;
+    printf("\n--- CHANGE EQUIPMENT STATUS ---\n");
+    printf("Enter the ID of the equipment to update: ");
+    if(scanf("%d", &targetId) != 1) {
+        printf("Invalid input. Please enter a number.\n");
+        while (getchar() != '\n');
+        return;
+    }
+    getchar();
+
+    Node* current = list;
+    while (current != NULL && current->data.id != targetId) {
+        current = current->next;
+    }
+
+    if (current == NULL) {
+        printf("\n>>> Equipment with ID %d not found.\n", targetId);
+        return;
+    }
+
+    printf("\nCurrent Status of '%s' (ID: %d): %s\n", current->data.name, current->data.id, current->data.status);
+    chooseEquipmentStatus(current->data.status);
+
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    sprintf(current->data.last_verification, "%02d/%02d/%04d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
+
+    printf("\n>>> Status updated successfully! Verification timestamp updated to %s!\n", current->data.last_verification);
+}
+
 Node* menuInventory(Node* list) {
     int option;
 
@@ -419,6 +457,7 @@ Node* menuInventory(Node* list) {
         printf("\n 1. Add New Equipment");
         printf("\n 2. Remove Equipment");
         printf("\n 3. Edit Equipment Details");
+        printf("\n 4. Change Equipment Status");
         printf("\n 0. Return to Main Menu");
         printf("\n=========================================");
         printf("\nChoose an option: ");
@@ -440,6 +479,9 @@ Node* menuInventory(Node* list) {
                 break;
             case 3:
                 editEquipment(list);
+                break;
+            case 4:
+                changeEquipmentStatus(list);
                 break;
             case 0:
                 printf("\nReturning to main menu...\n");
