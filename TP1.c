@@ -46,8 +46,9 @@ Node* addEquipment(Node* list) {
     printf("\n--- REGISTER NEW EQUIPMENT (ID: %d) ---\n", newNode->data.id);
     printf("Name: ");
     readString(newNode->data.name, sizeof(newNode->data.name));
-    printf("Type: ");
-    readString(newNode->data.type, sizeof(newNode->data.type));
+    
+    chooseEquipmentType(newNode->data.type);
+
     printf("Brand: ");
     readString(newNode->data.brand, sizeof(newNode->data.brand));
     printf("Model: ");
@@ -140,6 +141,58 @@ void displayEquipment(Node* list) {
         current = current->next;
     }
     printf("-------------------------------------------------------------\n");
+}
+
+void chooseEquipmentType(char *targetDestination) {
+    int choice;
+
+    do {
+        printf("\n--- Select Equipment Type ---\n");
+        printf("1. Router\n");
+        printf("2. Switch\n");
+        printf("3. Access Point\n");
+        printf("4. Server or NAS\n");
+        printf("5. Network Printer\n");
+        printf("6. IP Camera\n");
+        printf("7. Sensors\n");
+        printf("8. UPS\n");
+        printf("Select type option (1-8): ");
+
+        if(scanf("%d", &choice) != 1) {
+            while (getchar() != '\n');
+            choice = -1;
+        }
+        getchar();
+
+        switch (choice) {
+            case 1:
+                strcpy(targetDestination, "Router");
+                break;
+            case 2:
+                strcpy(targetDestination, "Switch");
+                break;
+            case 3:
+                strcpy(targetDestination, "Access Point");
+                break;
+            case 4:
+                strcpy(targetDestination, "Server or NAS");
+                break;
+            case 5:
+                strcpy(targetDestination, "Network Printer");
+                break;
+            case 6:
+                strcpy(targetDestination, "IP Camera");
+                break;
+            case 7:
+                strcpy(targetDestination, "Sensors");
+                break;
+            case 8:
+                strcpy(targetDestination, "UPS");
+                break;
+            default:
+                printf("Invalid option. Please select a number between 1 and 8.\n");
+        }
+    } while (choice < 1 || choice > 8);
 }
 
 Node* menuInventory(Node* list) {
