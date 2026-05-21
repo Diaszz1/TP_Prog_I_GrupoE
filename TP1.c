@@ -34,95 +34,6 @@ void readString(char *variable, int size) {
     }
 }
 
-Node* addEquipment(Node* list) {
-    Node* newNode = (Node*)malloc(sizeof(Node));
-    if (newNode == NULL) {
-        printf("Memory allocation failed. Unable to add equipment.\n");
-        return list;
-    }
-
-    newNode->data.id = nextEquipementId++;
-
-    printf("\n--- REGISTER NEW EQUIPMENT (ID: %d) ---\n", newNode->data.id);
-    printf("Name: ");
-    readString(newNode->data.name, sizeof(newNode->data.name));
-    
-    chooseEquipmentType(newNode->data.type);
-
-    printf("Brand: ");
-    readString(newNode->data.brand, sizeof(newNode->data.brand));
-    printf("Model: ");
-    readString(newNode->data.model, sizeof(newNode->data.model));
-    printf("IP Address: ");
-    readString(newNode->data.ip, sizeof(newNode->data.ip));
-    printf("MAC Address: ");
-    readString(newNode->data.mac, sizeof(newNode->data.mac));
-    printf("Location: ");
-    readString(newNode->data.location, sizeof(newNode->data.location));
-
-    chooseEquipmentStatus(newNode->data.status);
-
-// Set last verification date to current date
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
-    sprintf(newNode->data.last_verification, "%02d/%02d/%04d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
-
-    newNode->next = list;
-
-    printf("\n>>> Equipment '%s' successfully registered on %s!\n", newNode->data.name, newNode->data.last_verification);
-    return newNode;
-}
-
-Node* removeEquipment(Node* list) {
-    if (list == NULL) {
-        printf("The inventory is empty.\n");
-        return list;
-    }
-
-    displayEquipment(list);
-
-    int targetId;
-    printf("\n--- REMOVE EQUIPMENT ---\n");
-    printf("Enter the ID of the equipment to remove: ");
-    if(scanf("%d", &targetId) != 1) {
-        printf("Invalid input. Please enter a number.\n");
-        int c;
-        while ((c = getchar()) != '\n' && c != EOF);
-        return list;
-    }
-    getchar();
-
-    Node* current = list;
-    Node* previous = NULL;
-
-    while (current != NULL && current->data.id != targetId) {
-        previous = current;
-        current = current->next;
-    }
-
-    if (current == NULL) {
-        printf("\n>>> Equipment with ID %d not found.\n", targetId);
-        return list;
-    }
-
-    if (strcmp(current->data.status, "Operational") != 0) {
-        printf("\n>>> Cannot remove equipment with ID %d because it is currently '%s'.\n", current->data.id, current->data.status);
-        printf(">>> Only 'Operational' equipment can be removed from inventory.\n");
-        return list;
-    }
-
-    if (previous == NULL) {
-        list = current->next;
-    } else {
-        previous->next = current->next;
-    }
-
-    printf("\n>>> Equipment with ID %d removed successfully.\n", targetId);
-
-    free(current);
-
-    return list;
-}
 
 void displayEquipment(Node* list) {
     if (list ==NULL) {
@@ -228,6 +139,96 @@ void chooseEquipmentStatus(char *targetDestination) {
                 printf("Invalid option. Please select a number between 1 and 4.\n");
         }
     } while (choice < 1 || choice > 4);
+}
+
+Node* addEquipment(Node* list) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    if (newNode == NULL) {
+        printf("Memory allocation failed. Unable to add equipment.\n");
+        return list;
+    }
+
+    newNode->data.id = nextEquipementId++;
+
+    printf("\n--- REGISTER NEW EQUIPMENT (ID: %d) ---\n", newNode->data.id);
+    printf("Name: ");
+    readString(newNode->data.name, sizeof(newNode->data.name));
+    
+    chooseEquipmentType(newNode->data.type);
+
+    printf("Brand: ");
+    readString(newNode->data.brand, sizeof(newNode->data.brand));
+    printf("Model: ");
+    readString(newNode->data.model, sizeof(newNode->data.model));
+    printf("IP Address: ");
+    readString(newNode->data.ip, sizeof(newNode->data.ip));
+    printf("MAC Address: ");
+    readString(newNode->data.mac, sizeof(newNode->data.mac));
+    printf("Location: ");
+    readString(newNode->data.location, sizeof(newNode->data.location));
+
+    chooseEquipmentStatus(newNode->data.status);
+
+// Set last verification date to current date
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    sprintf(newNode->data.last_verification, "%02d/%02d/%04d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
+
+    newNode->next = list;
+
+    printf("\n>>> Equipment '%s' successfully registered on %s!\n", newNode->data.name, newNode->data.last_verification);
+    return newNode;
+}
+
+Node* removeEquipment(Node* list) {
+    if (list == NULL) {
+        printf("The inventory is empty.\n");
+        return list;
+    }
+
+    displayEquipment(list);
+
+    int targetId;
+    printf("\n--- REMOVE EQUIPMENT ---\n");
+    printf("Enter the ID of the equipment to remove: ");
+    if(scanf("%d", &targetId) != 1) {
+        printf("Invalid input. Please enter a number.\n");
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF);
+        return list;
+    }
+    getchar();
+
+    Node* current = list;
+    Node* previous = NULL;
+
+    while (current != NULL && current->data.id != targetId) {
+        previous = current;
+        current = current->next;
+    }
+
+    if (current == NULL) {
+        printf("\n>>> Equipment with ID %d not found.\n", targetId);
+        return list;
+    }
+
+    if (strcmp(current->data.status, "Operational") != 0) {
+        printf("\n>>> Cannot remove equipment with ID %d because it is currently '%s'.\n", current->data.id, current->data.status);
+        printf(">>> Only 'Operational' equipment can be removed from inventory.\n");
+        return list;
+    }
+
+    if (previous == NULL) {
+        list = current->next;
+    } else {
+        previous->next = current->next;
+    }
+
+    printf("\n>>> Equipment with ID %d removed successfully.\n", targetId);
+
+    free(current);
+
+    return list;
 }
 
 Node* menuInventory(Node* list) {
