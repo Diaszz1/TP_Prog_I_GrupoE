@@ -79,6 +79,8 @@ Node* removeEquipment(Node* list) {
         return list;
     }
 
+    displayEquipment(list);
+
     int targetId;
     printf("\n--- REMOVE EQUIPMENT ---\n");
     printf("Enter the ID of the equipment to remove: ");
@@ -114,6 +116,24 @@ Node* removeEquipment(Node* list) {
     free(current);
 
     return list;
+}
+
+void displayEquipment(Node* list) {
+    if (list ==NULL) {
+        printf("\nCurrent inventory list is completely empty.\n");
+        return;
+    }
+
+    printf("\n--- CURRENT EQUIPMENT INVENTORY ---\n");
+    printf("%-5s | %-20s | %-15s | %-15s\n", "ID", "Name", "Type", "Brand");
+    printf("--------------------------------─────────────────────────────\n");
+
+    Node* current = list;
+    while (current != NULL) {
+        printf("%-5d | %-20s | %-15s | %-15s\n", current->data.id, current->data.name, current->data.type, current->data.brand);
+        current = current->next;
+    }
+    printf("-------------------------------------------------------------\n");
 }
 
 Node* menuInventory(Node* list) {
