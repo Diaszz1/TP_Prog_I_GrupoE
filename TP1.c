@@ -30,10 +30,14 @@ void readString(char *variable, int size) {
         variable[len - 1] = '\0';
     } else {
 
-        printf("Input exceeded limit. Automatically truncated to %d characters.\n", size - 1);
-
         int c;
-        while ((c = getchar()) != '\n' && c != EOF);
+        int extraBytes = 0;
+        while ((c = getchar()) != '\n' && c != EOF) {
+            extraBytes++;
+        }
+        if (extraBytes > 0) {
+            printf("Input exceeded limit. Automatically truncated to %d characters.\n", size - 1);
+        }
     }
 }
 
