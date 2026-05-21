@@ -60,8 +60,7 @@ Node* addEquipment(Node* list) {
     printf("Location: ");
     readString(newNode->data.location, sizeof(newNode->data.location));
 
-// Set default status
-    strcpy(newNode->data.status, "Operational");
+    chooseEquipmentStatus(newNode->data.status);
 
 // Set last verification date to current date
     time_t t = time(NULL);
@@ -193,6 +192,42 @@ void chooseEquipmentType(char *targetDestination) {
                 printf("Invalid option. Please select a number between 1 and 8.\n");
         }
     } while (choice < 1 || choice > 8);
+}
+
+void chooseEquipmentStatus(char *targetDestination) {
+    int choice;
+
+    do {
+        printf("\n--- Select Equipment Status ---\n");
+        printf("1. Operational\n");
+        printf("2. Faulty\n");
+        printf("3. Under Maintenance\n");
+        printf("4. Deactivated\n");
+        printf("Select status option (1-4): ");
+        
+        if(scanf("%d", &choice) != 1) {
+            while (getchar() != '\n');
+            choice = -1;
+        }
+        getchar();
+
+        switch (choice) {
+            case 1:
+                strcpy(targetDestination, "Operational");
+                break;
+            case 2:
+                strcpy(targetDestination, "Faulty");
+                break;
+            case 3:
+                strcpy(targetDestination, "Under Maintenance");
+                break;
+            case 4:
+                strcpy(targetDestination, "Deactivated");
+                break;
+            default:
+                printf("Invalid option. Please select a number between 1 and 4.\n");
+        }
+    } while (choice < 1 || choice > 4);
 }
 
 Node* menuInventory(Node* list) {
