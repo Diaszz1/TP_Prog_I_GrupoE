@@ -563,6 +563,99 @@ void listEquipmentByStatus(Node* list) {
     }
 }
 
+void searchEquipment(Node* list) {
+    if (list == NULL) {
+        printf("\nThe inventory is completely empty. No assets to search.\n");
+        return;
+    }
+
+    int searchOption;
+    printf("\n--- SEARCH ASSET GATEWAY ---\n");
+    printf(" 1. Search by Asset ID (Code)\n");
+    printf(" 2. Search by IP Address\n");
+    printf(" 3. Search by MAC Address\n");
+    printf("Select search option: ");
+
+    if (scanf("%d", &searchOption) != 1) {
+        while (getchar() != '\n');
+        printf("\nInvalid criteria option.\n");
+        return;
+    }
+    getchar();
+
+    Node* current = list;
+    int found = 0;
+
+    if (searchOption == 1) {
+        int targetId;
+        printf("Enter target Asset ID: ");
+        if (scanf("%d", &targetId) != 1) {
+            while (getchar() != '\n');
+            printf("\nInvalid Asset ID.\n");
+            return;
+        }
+        getchar();
+
+        while (current != NULL) {
+            if (current->data.id == targetId) {
+                found = 1;
+                break;
+            }
+            current = current->next;
+        }
+    }
+
+    else if (searchOption == 2) {
+        char targetIP[16];
+        printf("Enter target IP Address: ");
+        readString(targetIP, sizeof(targetIP));
+
+        while (current != NULL) {
+            if (strcmp(current->data.ip, targetIP) == 0) {
+                found = 1;
+                break;
+            }
+            current = current->next;
+        }
+    }
+
+    else if (searchOption == 3) {
+        char targetMAC[18];
+        printf("Enter target MAC Address: ");
+        readString(targetMAC, sizeof(targetMAC));
+
+        while (current != NULL) {
+            if (strcmp(current->data.mac, targetMAC) == 0) {
+                found = 1;
+                break;
+            }
+            current = current->next;
+        }
+    }
+    else {
+        printf("\nInvalid search option.\n");
+        return;
+    }
+
+    if (found && current != NULL) {
+        printf("\n>>> Equipment found! Displaying details:\n");
+        printf("--------------------------------------------------\n");
+        printf("  Asset ID:     %d\n", current->data.id);
+        printf("  Name:         %s\n", current->data.name);
+        printf("  Type:         %s\n", current->data.type);
+        printf("  Brand:        %s\n", current->data.brand);
+        printf("  Model:        %s\n", current->data.model);
+        printf("  IP Address:   %s\n", current->data.ip);
+        printf("  MAC Address:  %s\n", current->data.mac);
+        printf("  Location:     %s\n", current->data.location);
+        printf("  Status:       %s\n", current->data.status);
+        printf("  Last Verify:  %s\n", current->data.last_verification);
+        printf("--------------------------------------------------\n");
+    } else {
+        printf("\n>>> No equipment found matching the search criteria.\n");
+    }
+}
+
 void menuReportsAndSearches(Node* list) {
     int option;
     do {
@@ -572,6 +665,7 @@ void menuReportsAndSearches(Node* list) {
         printf("1. List All Equipment\n");
         printf("2. List Equipment by Type\n");
         printf("3. List Equipment by Status\n");
+        printf("4. Search Equipment\n");
         printf("0. Return to Inventory Menu\n");
         printf("=========================================\n");
         printf("Choose an option: ");
@@ -591,6 +685,9 @@ void menuReportsAndSearches(Node* list) {
                 break;
             case 3:
                 listEquipmentByStatus(list);
+                break;
+            case 4:
+                searchEquipment(list);
                 break;
             case 0:
                 printf("\nReturning to inventory menu...\n");
