@@ -21,6 +21,10 @@ typedef struct Node {
     struct Node* next;
 } Node;
 
+typedef struct {
+    int responded;
+} PingResult;
+
 int nextEquipementId = 1;
 
 void readString(char *variable, int size) {
@@ -40,7 +44,6 @@ void readString(char *variable, int size) {
         }
     }
 }
-
 
 void displayEquipment(Node* list) {
     if (list ==NULL) {
@@ -925,6 +928,35 @@ Node* menuInventory(Node* list) {
     return list;
 }
 
+void menuConnectivity(Node* list) {
+    int option;
+    do {
+        printf("\n=========================================");
+        printf("\n   MINI NOC SYSTEM - CONNECTIVITY TESTS");
+        printf("\n=========================================");
+        printf("\n 1. Ping a Specific Asset IP");
+        printf("\n 0. Return to Main Menu");
+        printf("\n=========================================");
+        printf("\nChoose an option: ");
+
+        if(scanf("%d", &option) != 1) {
+            printf("Invalid input. Please enter a number.\n");
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF);
+            continue;
+        }
+        getchar();
+
+        switch (option) {
+            case 0:
+                printf("\nReturning to main menu...\n");
+                break;
+            default:
+                printf("\nInvalid option. Please try again.\n");
+                break;
+        }
+    } while (option != 0);
+}
 
 int main() {
     Node* equipmentList = NULL;
@@ -936,6 +968,7 @@ int main() {
         printf("\n       MINI NOC SYSTEM - MAIN MENU");
         printf("\n=========================================");
         printf("\n 1. Inventory Management");
+        printf("\n 2. Connectivity & Network Tests");
         printf("\n 0. Exit Program");
         printf("\n=========================================");
         printf("\nChoose an option: ");
@@ -951,6 +984,9 @@ int main() {
         switch (option) {
             case 1:
                 equipmentList = menuInventory(equipmentList);
+                break;
+            case 2:
+                menuConnectivity(equipmentList);
                 break;
             case 0:
                 printf("\nSaving session data to backup file...\n"); 
