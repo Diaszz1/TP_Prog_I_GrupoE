@@ -773,6 +773,50 @@ Node* loadInventoryFromBinary(Node* list) {
     return list;
 }
 
+void factoryResetInventory(Node** list) {
+    char password[20];
+    printf("\n==================================================");
+    printf("\n   [CRITICAL] SYSTEM FACTORY RESET GATEWAY");
+    printf("\n==================================================");
+    printf("\nEnter Admin Password to wipe system: ");
+    readString(password, sizeof(password));
+
+    if (strcmp(password, "admin123") != 0) {
+        printf("\nInvalid password. Factory reset aborted.\n");
+        return;
+    }
+
+    char confirmation;
+    printf("\n>>> WARNING: This action will permanently delete ALL inventory data and cannot be undone.\n");
+    printf("Are you sure you want to proceed? (y/n): ");
+    scanf("%c", &confirmation);
+    while (getchar() != '\n');
+
+    if (confirmation != 'y' && confirmation != 'Y') {
+        printf("\nFactory reset cancelled. No data was harmed.\n");
+        return;
+    }
+
+    Node* current = *list;
+    int count = 0;
+    while (current != NULL) {
+        Node* nextNode = current->next;
+        free(current);
+        current = nextNode;
+        count++;
+    }
+
+    *list = NULL;
+
+    extern int nextEquipementId;
+    nextEquipementId = 1;
+
+    remove("inventory.dat");
+
+    printf("\n>>> Factory reset successful! %d assets deleted and system restored to default state.\n", count);
+    printf(">>> The inventory is now empty and ready for new equipment registration.\n");
+}
+
 Node* menuInventory(Node* list) {
     int option;
 
@@ -786,6 +830,7 @@ Node* menuInventory(Node* list) {
         printf("\n 4. Change Equipment Status");
         printf("\n 5. Reports & Searches Menu");
         printf("\n 6. Save Inventory to Backup File");
+        printf("\n 7. [ADMIN] Factory Reset Inventory");
         printf("\n 0. Return to Main Menu");
         printf("\n=========================================");
         printf("\nChoose an option: ");
@@ -817,6 +862,9 @@ Node* menuInventory(Node* list) {
             case 6:
                 saveInventoryToBinary(list);
                 break; 
+            case 7:
+                factoryResetInventory(&list);
+                break;
             case 0:
                 printf("\nReturning to main menu...\n");
                 break;
