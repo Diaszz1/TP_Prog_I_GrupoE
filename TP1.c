@@ -447,6 +447,38 @@ void changeEquipmentStatus(Node* list) {
     printf("\n>>> Status updated successfully! Verification timestamp updated to %s!\n", current->data.last_verification);
 }
 
+void listAllEquipment(Node* list) {
+    if (list == NULL) {
+        printf("\nCurrent inventory is completely empty. No assets to display.\n");
+        return;
+    }
+
+    printf("\n==================================================\n");
+    printf("           FULL EQUIPMENT INVENTORY               \n");
+    printf("==================================================\n");
+
+    Node* current = list;
+    int count = 1;
+
+    while (current != NULL) {
+        printf("\n[%d] Asset ID: %d\n", count++, current->data.id);
+        printf("--------------------------------------------------\n");
+        printf("  Name:        %s\n", current->data.name);
+        printf("  Type:        %s\n", current->data.type);
+        printf("  Brand:       %s\n", current->data.brand);
+        printf("  Model:       %s\n", current->data.model);
+        printf("  IP Address:  %s\n", current->data.ip);
+        printf("  MAC Address: %s\n", current->data.mac);
+        printf("  Location:    %s\n", current->data.location);
+        printf("  Status:      %s\n", current->data.status);
+        printf("  Last Verify: %s\n", current->data.last_verification);
+        printf("--------------------------------------------------\n");
+
+        current = current->next;
+    }
+    printf("\n>>> End of asset report. Total equipment listed: %d\n", count - 1);
+}
+
 Node* menuInventory(Node* list) {
     int option;
 
@@ -494,6 +526,7 @@ Node* menuInventory(Node* list) {
 
     return list;
 }
+
 
 int main() {
     Node* equipmentList = NULL;
