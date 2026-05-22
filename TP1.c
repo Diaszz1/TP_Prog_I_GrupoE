@@ -667,6 +667,50 @@ void searchEquipment(Node* list) {
     }
 }
 
+void displayInventoryDashboard(Node* list) {
+    int total = 0, operational = 0, faulty = 0, maintenance = 0, deactivated = 0;
+    Node* current = list;
+
+    while (current != NULL) {
+        total++;
+        if (strcmp(current->data.status, "Operational") == 0) {
+            operational++;
+        } else if (strcmp(current->data.status, "Faulty") == 0) {
+            faulty++;
+        } else if (strcmp(current->data.status, "Under Maintenance") == 0) {
+            maintenance++;
+        } else if (strcmp(current->data.status, "Deactivated") == 0) {
+            deactivated++;
+        }
+        current = current->next;
+    }
+
+    printf("\n==================================================");
+    printf("\n     MINI NOC - INFRASTRUCTURE HEALTH DASHBOARD   ");
+    printf("\n==================================================");
+    printf("\n  Total Monitored Assets:   %d", total);
+    printf("\n ------------------------------------------------");
+    printf("\n  [Active] Operational:     %d", operational);
+    printf("\n  [Warning] Maintenance:    %d", maintenance);
+    printf("\n  [Alert] Faulty / Down:    %d", faulty);
+    printf("\n  [Offline] Deactivated:    %d", deactivated);
+    printf("\n ------------------------------------------------");
+
+    if (total > 0) {
+        float integrityRate = ((float)operational / total) * 100;
+        printf("\n  Overall Network Integrity: %.2f%%", integrityRate);
+
+        if (integrityRate < 70.0) {
+            printf("\n  [SECURITY ALERT] Critical number of offline assets!");
+        } else {
+            printf("\n  [SYSTEM STATUS] Infrastructure operating normally.");
+        }
+    } else {
+        printf("\n  Network Integrity Rate:   0.0%% (No assets registered)");
+    }
+    printf("\n==================================================\n");
+}
+
 void menuReportsAndSearches(Node* list) {
     int option;
     do {
@@ -676,7 +720,8 @@ void menuReportsAndSearches(Node* list) {
         printf("1. List All Equipment\n");
         printf("2. List Equipment by Type\n");
         printf("3. List Equipment by Status\n");
-        printf("4. Search Equipment\n");
+        printf("4. Search Equipment(ID, IP, MAC)\n");
+        printf("5. Display Inventory Dashboard\n");
         printf("0. Return to Inventory Menu\n");
         printf("=========================================\n");
         printf("Choose an option: ");
@@ -699,6 +744,9 @@ void menuReportsAndSearches(Node* list) {
                 break;
             case 4:
                 searchEquipment(list);
+                break;
+            case 5:
+                displayInventoryDashboard(list);
                 break;
             case 0:
                 printf("\nReturning to inventory menu...\n");
