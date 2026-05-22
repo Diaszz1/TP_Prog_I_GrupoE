@@ -479,6 +479,37 @@ void listAllEquipment(Node* list) {
     printf("\n>>> End of asset report. Total equipment listed: %d\n", count - 1);
 }
 
+void menuReportsAndSearches(Node* list) {
+    int option;
+    do {
+        printf("\n=========================================\n");
+        printf("        REPORTS & SEARCHES SUBMENU       \n");
+        printf("=========================================\n");
+        printf("1. List All Equipment\n");
+        printf("0. Return to Inventory Menu\n");
+        printf("=========================================\n");
+        printf("Choose an option: ");
+
+        if (scanf("%d", &option) != 1) {
+            while (getchar() != '\n'); // Limpar buffer se digitarem letras
+            option = -1;
+        }
+        getchar();
+
+        switch (option) {
+            case 1:
+                listAllEquipment(list);
+                break;
+            case 0:
+                printf("\nReturning to inventory menu...\n");
+                break;
+            default:
+                printf("\nInvalid option. Please try again.\n");
+                break;
+        }
+    } while (option != 0);
+}
+
 Node* menuInventory(Node* list) {
     int option;
 
@@ -490,6 +521,7 @@ Node* menuInventory(Node* list) {
         printf("\n 2. Remove Equipment");
         printf("\n 3. Edit Equipment Details");
         printf("\n 4. Change Equipment Status");
+        printf("\n 5. Reports & Searches Menu");
         printf("\n 0. Return to Main Menu");
         printf("\n=========================================");
         printf("\nChoose an option: ");
@@ -514,6 +546,9 @@ Node* menuInventory(Node* list) {
                 break;
             case 4:
                 changeEquipmentStatus(list);
+                break;
+            case 5:
+                menuReportsAndSearches(list);
                 break;
             case 0:
                 printf("\nReturning to main menu...\n");
