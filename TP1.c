@@ -521,6 +521,48 @@ void listEquipmentByType(Node* list) {
     }
 }
 
+void listEquipmentByStatus(Node* list) {
+    if (list == NULL) {
+        printf("\nThe inventory is completely empty. No assets to display.\n");
+        return;
+    }
+
+    char targetStatus[30];
+
+    printf("\nSelect the status of equipment to list:\n");
+    chooseEquipmentStatus(targetStatus);
+
+    printf("\n==================================================\n");
+    printf("       FILTERED REPORT: STATUS -> %s\n", targetStatus);
+    printf("==================================================\n");
+
+    Node* current = list;
+    int count = 0;
+
+    while (current != NULL) {
+        if (strcmp(current->data.status, targetStatus) == 0) {
+            count++;
+            printf("\nAsset ID: %d | Name: %s\n", current->data.id, current->data.name);
+            printf("--------------------------------------------------\n");
+            printf("  Type:        %s\n", current->data.type);
+            printf("  Brand:       %s\n", current->data.brand);
+            printf("  Model:       %s\n", current->data.model);
+            printf("  IP Address:  %s\n", current->data.ip);
+            printf("  MAC Address: %s\n", current->data.mac);
+            printf("  Location:    %s\n", current->data.location);
+            printf("  Last Verify: %s\n", current->data.last_verification);
+            printf("--------------------------------------------------\n");
+        }
+        current = current->next;
+    }
+
+    if (count == 0) {
+        printf("\n>>> No equipment found registered with the status '%s'.\n", targetStatus);
+    } else {
+        printf("\n>>> End of filtered report. Total '%s' equipment listed: %d\n", targetStatus, count);
+    }
+}
+
 void menuReportsAndSearches(Node* list) {
     int option;
     do {
@@ -529,6 +571,7 @@ void menuReportsAndSearches(Node* list) {
         printf("=========================================\n");
         printf("1. List All Equipment\n");
         printf("2. List Equipment by Type\n");
+        printf("3. List Equipment by Status\n");
         printf("0. Return to Inventory Menu\n");
         printf("=========================================\n");
         printf("Choose an option: ");
@@ -545,6 +588,9 @@ void menuReportsAndSearches(Node* list) {
                 break;
             case 2:
                 listEquipmentByType(list);
+                break;
+            case 3:
+                listEquipmentByStatus(list);
                 break;
             case 0:
                 printf("\nReturning to inventory menu...\n");
