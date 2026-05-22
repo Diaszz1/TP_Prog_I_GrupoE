@@ -230,10 +230,21 @@ Node* addEquipment(Node* list) {
     struct tm tm = *localtime(&t);
     sprintf(newNode->data.last_verification, "%02d/%02d/%04d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
 
-    newNode->next = list;
+    if (list == NULL || newNode->data.id < list->data.id) {
+        newNode->next = list;
+        return newNode;
+    }
+    else {
+        Node* current = list;
+        while (current->next != NULL && current->next->data.id < newNode->data.id) {
+            current = current->next;
+        }
+        newNode->next = current->next;
+        current->next = newNode;
+    }
 
     printf("\n>>> Equipment '%s' successfully registered on %s!\n", newNode->data.name, newNode->data.last_verification);
-    return newNode;
+    return list;
 }
 
 Node* removeEquipment(Node* list) {
