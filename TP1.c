@@ -710,6 +710,69 @@ void menuReportsAndSearches(Node* list) {
     } while (option != 0);
 }
 
+void saveInventoryToBinary(Node* list) {
+    FILE* file = fopen("inventory.dat", "wb");
+    if (file == NULL) {
+        printf("\nError opening file for writing.\n");
+        return;
+    }
+
+    Node* current = list;
+    int count = 0;
+
+    while (current != NULL) {
+        fwrite(&current->data, sizeof(Equipment), 1, file);
+        count++;
+        current = current->next;
+    }
+
+    fclose(file);
+    printf("\n>>> Success! %d assets securely backed up to 'inventory.dat'.\n", count);
+}
+
+Node* loadInventoryFromBinary(Node* list) {
+    FILE* file = fopen("inventory.dat", "rb");
+    if (file == NULL) {
+        printf("\nNo backup file found. Starting with an empty inventory.\n");
+        return list;
+    }
+
+    Equipment tempEquipment;
+    int count = 0;
+
+    while (fread(&tempEquipment, sizeof(Equipment), 1, file) == 1) {
+        Node* newNode = (Node*)malloc(sizeof(Node));
+        if (newNode == NULL) {
+            printf("\nMemory allocation failed while loading inventory.\n");
+            fclose(file);
+            return list;
+        }
+        newNode->data = tempEquipment;
+        newNode->next = list;
+
+        if (tempEquipment.id >= nextEquipementId) {
+            nextEquipementId = tempEquipment.id + 1;
+        }
+        
+        if (list == NULL || newNode->data.id < list->data.id) {
+            newNode->next = list;
+            list = newNode;
+        } else {
+            Node* current = list;
+            while (current->next != NULL && current->next->data.id < newNode->data.id) {
+                current = current->next;
+            }
+            newNode->next = current->next;
+            current->next = newNode;
+        }
+        count++;
+    }
+
+    fclose(file);
+    printf("\n>>> Success! %d assets loaded from 'inventory.dat' into inventory.\n", count);
+    return list;
+}
+
 Node* menuInventory(Node* list) {
     int option;
 
@@ -722,6 +785,7 @@ Node* menuInventory(Node* list) {
         printf("\n 3. Edit Equipment Details");
         printf("\n 4. Change Equipment Status");
         printf("\n 5. Reports & Searches Menu");
+        printf("\n 6. Save Inventory to Backup File");
         printf("\n 0. Return to Main Menu");
         printf("\n=========================================");
         printf("\nChoose an option: ");
@@ -750,6 +814,9 @@ Node* menuInventory(Node* list) {
             case 5:
                 menuReportsAndSearches(list);
                 break;
+            case 6:
+                saveInventoryToBinary(list);
+                break; 
             case 0:
                 printf("\nReturning to main menu...\n");
                 break;
@@ -765,6 +832,7 @@ Node* menuInventory(Node* list) {
 
 int main() {
     Node* equipmentList = NULL;
+    equipmentList = loadInventoryFromBinary(equipmentList);
     int option;
 
     do {
@@ -789,6 +857,8 @@ int main() {
                 equipmentList = menuInventory(equipmentList);
                 break;
             case 0:
+                printf("\nSaving session data to backup file...\n"); 
+                saveInventoryToBinary(equipmentList);
                 printf("\nExiting program. Goodbye!\n");
                 break;
             default:
