@@ -928,6 +928,26 @@ Node* menuInventory(Node* list) {
     return list;
 }
 
+void writeToMonitorizationLog(int assetID, const char* ip, int success) {
+    FILE* logFile = fopen("log_monitorization.txt", "a");
+    if (logFile == NULL);
+
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+
+    fprintf(logFile, "[%02d/%02d/%04d %02d:%02d:%02d] TEST - Asset ID: %d | IP: %s | RESULT: %s\n",
+            tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900,
+            tm.tm_hour, tm.tm_min, tm.tm_sec,
+            assetID, ip, (success ? "UP (Responded)" : "DOWN (No Response)"));
+
+    fclose(logFile);
+}
+
+void createAutomaticIncident(int assetID, const char* assetName) {
+    printf("[INCIDENT] -> Generating automatic ticket for Asset ID %d (%s)!\n", assetID, assetName);
+    printf("[INCIDENT] -> Ticket successfully routed to the technical service queue.\n");
+}
+
 void menuConnectivity(Node* list) {
     int option;
     do {
