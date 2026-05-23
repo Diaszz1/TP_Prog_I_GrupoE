@@ -1,0 +1,2 @@
+[23/05/2026 16:04:25] TEST - Asset ID: 7 | IP: 192.168.56.101 | RESULT: DOWN (No Response)
+[23/05/2026 16:04:44] TEST - Asset ID: 1 | IP: 192.168.10.1 | RESULT: DOWN (No Response)
