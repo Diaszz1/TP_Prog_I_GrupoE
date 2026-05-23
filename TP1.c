@@ -13,7 +13,7 @@ typedef struct {
     char mac[18];
     char location[50];
     char status[20];
-    char last_verification[20];
+    char last_verification[30];
 } Equipment;
 
 typedef struct Node {
@@ -231,7 +231,9 @@ Node* addEquipment(Node* list) {
 // Set last verification date to current date
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
-    sprintf(newNode->data.last_verification, "%02d/%02d/%04d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
+    sprintf(newNode->data.last_verification, "%02d/%02d/%04d %02d:%02d", 
+            tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900,
+            tm.tm_hour, tm.tm_min);
 
     if (list == NULL || newNode->data.id < list->data.id) {
         newNode->next = list;
@@ -415,8 +417,10 @@ void editEquipment(Node* list) {
 
     if (dataChanged) {
         time_t t = time(NULL);
-        struct tm tm = *localtime(&t);
-        sprintf(current->data.last_verification, "%02d/%02d/%04d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
+    struct tm tm = *localtime(&t);
+    sprintf(current->data.last_verification, "%02d/%02d/%04d %02d:%02d", 
+            tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900,
+            tm.tm_hour, tm.tm_min);
         printf("\n>>> Modifications saved! Verification timestamp updated to %s!\n", current->data.last_verification);
     } else {
         printf("\n>>> No changes made to equipment details.\n");
@@ -456,7 +460,9 @@ void changeEquipmentStatus(Node* list) {
 
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
-    sprintf(current->data.last_verification, "%02d/%02d/%04d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
+    sprintf(current->data.last_verification, "%02d/%02d/%04d %02d:%02d", 
+            tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900,
+            tm.tm_hour, tm.tm_min);
 
     printf("\n>>> Status updated successfully! Verification timestamp updated to %s!\n", current->data.last_verification);
 }
@@ -948,6 +954,54 @@ void createAutomaticIncident(int assetID, const char* assetName) {
     printf("[INCIDENT] -> Ticket successfully routed to the technical service queue.\n");
 }
 
+PingResult processAssetPing(Node* target) {
+    PingResult result;
+    result.responded = 0;
+
+    if (target == NULL) return result;
+
+    printf("\n--------------------------------------------------");
+    printf("\n[NOC] Testing connectivity to: %s (%s)", target->data.name, target->data.ip);
+    printf("\n[NOC] Sending 4 ICMP echo requests... Please wait.");
+    printf("\n--------------------------------------------------\n");
+
+    char command[150];
+    sprintf(command, "ping -n 4 %s > resultado_ping.txt", target->data.ip);
+    system(command);
+
+    FILE* file = fopen("resultado_ping.txt", "r");
+    if (file != NULL) {
+        char line[256];
+        while (fgets(line, sizeof(line), file)) {
+            if (strstr(line, "TTL=") != NULL) {
+                result.responded = 1;
+                break;
+            }
+        }
+        fclose(file);
+    }
+
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    sprintf(target->data.last_verification, "%02d/%02d/%04d %02d:%02d", 
+            tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900,
+            tm.tm_hour, tm.tm_min);
+
+    if (result.responded) {
+        strcpy(target->data.status, "Operational");
+        printf("Asset ID %d responded successfully. Status: Operational.\n", target->data.id);
+    } else {
+        strcpy(target->data.status, "Faulty");
+        printf("CRITICAL: Asset ID %d failed to respond! Status updated to: Faulty.\n", target->data.id);
+
+        createAutomaticIncident(target->data.id, target->data.name);
+    }
+
+    writeToMonitorizationLog(target->data.id, target->data.ip, result.responded);
+
+    return result;
+}
+
 void runGeneralNetworkTest(Node* list) {
     if (list ==NULL) {
         printf("\nThe inventory is empty. No assets available for testing.\n");
@@ -970,52 +1024,6 @@ void runGeneralNetworkTest(Node* list) {
     printf("\n=========================================");
     printf("\n>>> General Sweep Completed. Total Monitored Endpoints: %d\n", totalTested);
     printf("=========================================\n");
-}
-
-PingResult processAssetPing(Node* target) {
-    PingResult result;
-    result.responded = 0;
-
-    if (target == NULL) return result;
-
-    printf("\n--------------------------------------------------");
-    printf("\n[NOC] Testing connectivity to: %s (%s)", target->data.name, target->data.ip);
-    printf("\n[NOC] Sending 4 ICMP echo requests... Please wait.");
-    printf("\n--------------------------------------------------\n");
-
-    char command[150];
-    sprintf(command, "ping -c 4 %s > resultado_ping.txt", target->data.ip);
-    system(command);
-
-    FILE* file = fopen("resultado_ping.txt", "r");
-    if (file != NULL) {
-        char line[256];
-        while (fgets(line, sizeof(line), file)) {
-            if (strstr(line, "TTL=") != NULL) {
-                result.responded = 1;
-                break;
-            }
-        }
-        fclose(file);
-    }
-
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
-    sprintf(target->data.last_verification, "%02d/%02d/%04d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
-
-    if (result.responded) {
-        strcpy(target->data.status, "Operational");
-        printf("Asset ID %d responded successfully. Status: Operational.\n", target->data.id);
-    } else {
-        strcpy(target->data.status, "Faulty");
-        printf("CRITICAL: Asset ID %d failed to respond! Status updated to: Faulty.\n", target->data.id);
-
-        createAutomaticIncident(target->data.id, target->data.name);
-    }
-
-    writeToMonitorizationLog(target->data.id, target->data.ip, result.responded);
-
-    return result;
 }
 
 void menuConnectivity(Node* list) {
