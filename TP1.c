@@ -1026,7 +1026,7 @@ void runGeneralNetworkTest(Node* list) {
     printf("=========================================\n");
 }
 
-void runLocalNetworkDiagnostic(Node* list) {
+void runLocalNetworkDiagnostic() {
     printf("\n=========================================");
     printf("\n     RUNNING LOCAL NETWORK DIAGNOSTIC     ");
     printf("\n=========================================");
@@ -1036,7 +1036,7 @@ void runLocalNetworkDiagnostic(Node* list) {
     printf("\nLocal network profile exported to 'resultado_rede_local.txt'.\n");
 }
 
-void runArpCacheDiagnostic(Node* list) {
+void runArpCacheDiagnostic() {
     printf("\n=========================================");
     printf("\n     RUNNING ARP CACHE DIAGNOSTIC         ");
     printf("\n=========================================");
@@ -1044,6 +1044,27 @@ void runArpCacheDiagnostic(Node* list) {
     system("arp -a > resultado_arp.txt");
 
     printf("\nARP cache exported to 'resultado_arp.txt'.\n");
+}
+
+void runDnsLookupDiagnostic() {
+    char domain[100];
+    char command[150];
+
+    printf("\n=========================================");
+    printf("\n     RUNNING DNS LOOKUP DIAGNOSTIC        ");
+    printf("\n=========================================");
+
+    printf("\nEnter domain name (e.g., www.google.com, facebook.com): ");
+    scanf("%99s", domain);
+
+    sprintf(command, "nslookup %s > resultado_dns.txt", domain);
+
+    printf("\n[NOC] Querying DNS servers for '%s'...", domain);
+
+    system(command);
+
+    printf("\nDNS lookup results for '%s' exported to 'resultado_dns.txt'.\n", domain);
+
 }
 
 void menuConnectivity(Node* list) {
@@ -1056,6 +1077,7 @@ void menuConnectivity(Node* list) {
         printf("\n 2. Run General Network Test (Ping Sweep)");
         printf("\n 3. Run Local Network Diagnostic (ipconfig)");
         printf("\n 4. Run ARP Cache Diagnostic (arp -a)");
+        printf("\n 5. Run DNS Lookup Diagnostic (nslookup)");
         printf("\n 0. Return to Main Menu");
         printf("\n=========================================");
         printf("\nChoose an option: ");
@@ -1097,10 +1119,13 @@ void menuConnectivity(Node* list) {
                 runGeneralNetworkTest(list);
                 break;
             case 3:
-                runLocalNetworkDiagnostic(list);
+                runLocalNetworkDiagnostic();
                 break;
             case 4:
-                runArpCacheDiagnostic(list);
+                runArpCacheDiagnostic();
+                break;
+            case 5:
+                runDnsLookupDiagnostic();
                 break;
             case 0:
                 printf("\nReturning to main menu...\n");

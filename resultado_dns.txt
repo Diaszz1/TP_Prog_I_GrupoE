@@ -1,0 +1,7 @@
+Server:  NOSdrive.home
+Address:  192.168.1.1
+
+Name:    google.com
+Addresses:  2a00:1450:4003:813::200e
+	  216.58.205.174
+
