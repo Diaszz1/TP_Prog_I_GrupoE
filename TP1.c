@@ -1026,6 +1026,16 @@ void runGeneralNetworkTest(Node* list) {
     printf("=========================================\n");
 }
 
+void runLocalNetworkDiagnostic(Node* list) {
+    printf("\n=========================================");
+    printf("\n     RUNNING LOCAL NETWORK DIAGNOSTIC     ");
+    printf("\n=========================================");
+    
+    system("ipconfig > resultado_rede_local.txt");
+
+    printf("\nLocal network profile exported to 'resultado_rede_local.txt'.\n");
+}
+
 void menuConnectivity(Node* list) {
     int option;
     do {
@@ -1034,6 +1044,7 @@ void menuConnectivity(Node* list) {
         printf("\n=========================================");
         printf("\n 1. Ping a Specific Asset IP");
         printf("\n 2. Run General Network Test (Ping Sweep)");
+        printf("\n 3. Run Local Network Diagnostic (ipconfig)");
         printf("\n 0. Return to Main Menu");
         printf("\n=========================================");
         printf("\nChoose an option: ");
@@ -1073,6 +1084,9 @@ void menuConnectivity(Node* list) {
             }
             case 2:
                 runGeneralNetworkTest(list);
+                break;
+            case 3:
+                runLocalNetworkDiagnostic(list);
                 break;
             case 0:
                 printf("\nReturning to main menu...\n");

@@ -8,3 +8,5 @@
 [23/05/2026 16:25:49] TEST - Asset ID: 4 | IP: 8.8.8.8 | RESULT: UP (Responded)
 [23/05/2026 16:26:07] TEST - Asset ID: 5 | IP: 10.255.255.1 | RESULT: DOWN (No Response)
 [23/05/2026 16:26:11] TEST - Asset ID: 6 | IP: 9.9.9.9 | RESULT: UP (Responded)
+[26/05/2026 18:39:09] TEST - Asset ID: 1 | IP: 127.0.0.1 | RESULT: UP (Responded)
+[26/05/2026 18:39:12] TEST - Asset ID: 2 | IP: 1.1.1.1 | RESULT: UP (Responded)
