@@ -936,7 +936,10 @@ Node* menuInventory(Node* list) {
 
 void writeToMonitorizationLog(int assetID, const char* ip, int success) {
     FILE* logFile = fopen("log_monitorization.txt", "a");
-    if (logFile == NULL);
+    if (logFile == NULL) {
+        printf("Could not open log file!\n");
+        return;
+    }
 
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
@@ -945,7 +948,19 @@ void writeToMonitorizationLog(int assetID, const char* ip, int success) {
             tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900,
             tm.tm_hour, tm.tm_min, tm.tm_sec,
             assetID, ip, (success ? "UP (Responded)" : "DOWN (No Response)"));
+    
+    if (!success) {
 
+        static int incidentCounter = 5000;
+        incidentCounter++;
+
+        fprintf(logFile, "   ↳ [CRITICAL INCIDENT #INC-%d]\n", incidentCounter);
+        fprintf(logFile, "     STATUS: OPEN | SEVERITY: HIGH\n");
+        fprintf(logFile, "     ACTION REQUIRED: Check routing or physical connectivity for Asset ID %d.\n", assetID);
+        fprintf(logFile, "   ----------------------------------------------------------------------\n");
+
+        printf("Asset ID %d failed! Ticket #INC-%d generated in logs.\n", assetID, incidentCounter);     
+    }
     fclose(logFile);
 }
 
