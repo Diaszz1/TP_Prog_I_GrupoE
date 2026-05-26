@@ -1067,6 +1067,25 @@ void runDnsLookupDiagnostic() {
 
 }
 
+void runRouteTracerDiagnostic() {
+    char target[100];
+    char command[150];
+
+    printf("\n=========================================");
+    printf("\n     RUNNING ROUTE TRACER DIAGNOSTIC      ");
+    printf("\n=========================================");
+
+    printf("\nEnter target IP or Domain (e.g., 1.1.1.1, ipv.pt): ");
+    scanf("%99s", target);
+
+    printf("\nTracing route to '%s'. Please wait (this may take a minute)...", target);
+
+    sprintf(command, "tracert %s > resultado_rota.txt", target);
+    system(command);
+
+    printf("\nRoute tracer results for '%s' exported to 'resultado_rota.txt'.\n", target);
+}
+
 void menuConnectivity(Node* list) {
     int option;
     do {
@@ -1078,6 +1097,7 @@ void menuConnectivity(Node* list) {
         printf("\n 3. Run Local Network Diagnostic (ipconfig)");
         printf("\n 4. Run ARP Cache Diagnostic (arp -a)");
         printf("\n 5. Run DNS Lookup Diagnostic (nslookup)");
+        printf("\n 6. Run Route Tracer Diagnostic (tracert)");
         printf("\n 0. Return to Main Menu");
         printf("\n=========================================");
         printf("\nChoose an option: ");
@@ -1126,6 +1146,9 @@ void menuConnectivity(Node* list) {
                 break;
             case 5:
                 runDnsLookupDiagnostic();
+                break;
+            case 6:
+                runRouteTracerDiagnostic();
                 break;
             case 0:
                 printf("\nReturning to main menu...\n");
