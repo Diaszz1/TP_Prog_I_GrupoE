@@ -1036,6 +1036,16 @@ void runLocalNetworkDiagnostic(Node* list) {
     printf("\nLocal network profile exported to 'resultado_rede_local.txt'.\n");
 }
 
+void runArpCacheDiagnostic(Node* list) {
+    printf("\n=========================================");
+    printf("\n     RUNNING ARP CACHE DIAGNOSTIC         ");
+    printf("\n=========================================");
+    
+    system("arp -a > resultado_arp.txt");
+
+    printf("\nARP cache exported to 'resultado_arp.txt'.\n");
+}
+
 void menuConnectivity(Node* list) {
     int option;
     do {
@@ -1045,6 +1055,7 @@ void menuConnectivity(Node* list) {
         printf("\n 1. Ping a Specific Asset IP");
         printf("\n 2. Run General Network Test (Ping Sweep)");
         printf("\n 3. Run Local Network Diagnostic (ipconfig)");
+        printf("\n 4. Run ARP Cache Diagnostic (arp -a)");
         printf("\n 0. Return to Main Menu");
         printf("\n=========================================");
         printf("\nChoose an option: ");
@@ -1087,6 +1098,9 @@ void menuConnectivity(Node* list) {
                 break;
             case 3:
                 runLocalNetworkDiagnostic(list);
+                break;
+            case 4:
+                runArpCacheDiagnostic(list);
                 break;
             case 0:
                 printf("\nReturning to main menu...\n");
