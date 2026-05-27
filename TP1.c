@@ -25,6 +25,48 @@ typedef struct {
     int responded;
 } PingResult;
 
+typedef enum {WINDOWS, LINUX } OS_TYPE;
+OS_TYPE currentOS = WINDOWS;
+
+void clearScreen() {
+    if (currentOS == WINDOWS) {
+        system("cls");
+    } else {
+        system("clear");
+    }
+}
+
+void configureOperatingSystem() {
+    int choice;
+    do {
+        printf("\n=========================================");
+        printf("\n    SELECT ENVIRONMENT / OPERATING SYSTEM");
+        printf("\n=========================================");
+        printf("\n 1. Microsoft Windows");
+        printf("\n 2. Linux (Ubuntu, Tails, Kali, etc.)");
+        printf("\n=========================================");
+        printf("\nSelect option (1-2): ");
+        
+        if (scanf("%d", &choice) != 1) {
+            int c; while ((c = getchar()) != '\n' && c != EOF);
+            choice = -1;
+        } else {
+            int c; while ((c = getchar()) != '\n' && c != EOF);
+        }
+
+        if (choice == 1) {
+            currentOS = WINDOWS;
+        } else if (choice == 2) {
+            currentOS = LINUX;
+        } else {
+            printf("\n[ERROR] Invalid choice. Please select 1 or 2.\n");
+        }
+    } while (choice != 1 && choice != 2);
+
+    clearScreen();
+    printf("\n>>> System configured successfully.\n");
+}
+
 int nextEquipementId = 1;
 
 void readString(char *variable, int size) {
@@ -743,24 +785,31 @@ void menuReportsAndSearches(Node* list) {
 
         switch (option) {
             case 1:
+                clearScreen();
                 listAllEquipment(list);
                 break;
             case 2:
+                clearScreen();
                 listEquipmentByType(list);
                 break;
             case 3:
+                clearScreen();
                 listEquipmentByStatus(list);
                 break;
             case 4:
+                clearScreen();
                 searchEquipment(list);
                 break;
             case 5:
+                clearScreen();
                 displayInventoryDashboard(list);
                 break;
             case 0:
+                clearScreen();
                 printf("\nReturning to inventory menu...\n");
                 break;
             default:
+                clearScreen();
                 printf("\nInvalid option. Please try again.\n");
                 break;
         }
@@ -902,30 +951,39 @@ Node* menuInventory(Node* list) {
 
         switch (option) {
             case 1:
+                clearScreen();
                 list = addEquipment(list);
                 break;
             case 2:
+                clearScreen();
                 list = removeEquipment(list);
                 break;
             case 3:
+                clearScreen();
                 editEquipment(list);
                 break;
             case 4:
+                clearScreen();
                 changeEquipmentStatus(list);
                 break;
             case 5:
+                clearScreen();
                 menuReportsAndSearches(list);
                 break;
             case 6:
+                clearScreen();
                 saveInventoryToBinary(list);
                 break; 
             case 7:
+                clearScreen();
                 factoryResetInventory(&list);
                 break;
             case 0:
+                clearScreen();
                 printf("\nReturning to main menu...\n");
                 break;
             default:
+                clearScreen();
                 printf("\nInvalid option. Please try again.\n");
                 break;
         }
@@ -1127,6 +1185,7 @@ void menuConnectivity(Node* list) {
 
         switch (option) {
             case 1: {
+                clearScreen();
                 if (list == NULL) {
                     printf("\nThe inventory is empty. No assets available for testing.\n");
                     break;
@@ -1151,24 +1210,31 @@ void menuConnectivity(Node* list) {
                 break;
             }
             case 2:
+                clearScreen();
                 runGeneralNetworkTest(list);
                 break;
             case 3:
+                clearScreen();
                 runLocalNetworkDiagnostic();
                 break;
             case 4:
+                clearScreen();
                 runArpCacheDiagnostic();
                 break;
             case 5:
+                clearScreen();
                 runDnsLookupDiagnostic();
                 break;
             case 6:
+                clearScreen();
                 runRouteTracerDiagnostic();
                 break;
             case 0:
+                clearScreen();
                 printf("\nReturning to main menu...\n");
                 break;
             default:
+                clearScreen();
                 printf("\nInvalid option. Please try again.\n");
                 break;
         }
@@ -1178,6 +1244,8 @@ void menuConnectivity(Node* list) {
 int main() {
     Node* equipmentList = NULL;
     equipmentList = loadInventoryFromBinary(equipmentList);
+    configureOperatingSystem();
+
     int option;
 
     do {
@@ -1200,17 +1268,23 @@ int main() {
 
         switch (option) {
             case 1:
+                clearScreen();
                 equipmentList = menuInventory(equipmentList);
+                clearScreen();
                 break;
             case 2:
+                clearScreen();
                 menuConnectivity(equipmentList);
+                clearScreen();
                 break;
             case 0:
+                clearScreen();
                 printf("\nSaving session data to backup file...\n"); 
                 saveInventoryToBinary(equipmentList);
                 printf("\nExiting program. Goodbye!\n");
                 break;
             default:
+                clearScreen();
                 printf("Invalid option. Please try again.\n");
                 break;
         }
