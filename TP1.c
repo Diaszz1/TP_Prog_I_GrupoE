@@ -1039,14 +1039,18 @@ PingResult processAssetPing(Node* target) {
     printf("\n--------------------------------------------------\n");
 
     char command[150];
-    sprintf(command, "ping -n 4 %s > resultado_ping.txt", target->data.ip);
+    if (currentOS == WINDOWS) {
+        sprintf(command, "ping -n 4 %s > resultado_ping.txt", target->data.ip);
+    } else {
+        sprintf(command, "ping -c 4 %s > resultado_ping.txt", target->data.ip);
+    }
     system(command);
 
     FILE* file = fopen("resultado_ping.txt", "r");
     if (file != NULL) {
         char line[256];
         while (fgets(line, sizeof(line), file)) {
-            if (strstr(line, "TTL=") != NULL) {
+            if (strstr(line, "TTL=") != NULL || strstr(line, "ttl=") != NULL || strstr(line, "bytes from") != NULL) {
                 result.responded = 1;
                 break;
             }
@@ -1104,7 +1108,11 @@ void runLocalNetworkDiagnostic() {
     printf("\n     RUNNING LOCAL NETWORK DIAGNOSTIC     ");
     printf("\n=========================================");
     
-    system("ipconfig > resultado_rede_local.txt");
+    if (currentOS == WINDOWS) {
+        system("ipconfig > resultado_rede_local.txt");
+    } else {
+        system("ip a > resultado_rede_local.txt 2>/dev/null || ifconfig > resultado_rede_local.txt");
+    }
 
     printf("\nLocal network profile exported to 'resultado_rede_local.txt'.\n");
 }
@@ -1153,7 +1161,11 @@ void runRouteTracerDiagnostic() {
 
     printf("\nTracing route to '%s'. Please wait (this may take a minute)...", target);
 
-    sprintf(command, "tracert %s > resultado_rota.txt", target);
+    if (currentOS == WINDOWS) {
+        sprintf(command, "tracert %s > resultado_rota.txt", target);
+    } else {
+        sprintf(command, "traceroute %s > resultado_rota.txt 2>/dev/null || tracepath %s > resultado_rota.txt", target, target);
+    }
     system(command);
 
     printf("\nRoute tracer results for '%s' exported to 'resultado_rota.txt'.\n", target);
