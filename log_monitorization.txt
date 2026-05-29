@@ -21,3 +21,32 @@
      STATUS: OPEN | SEVERITY: HIGH
      ACTION REQUIRED: Check routing or physical connectivity for Asset ID 3.
    ----------------------------------------------------------------------
+[29/05/2026 11:47:24] TEST - Asset ID: 1 | IP: 127.0.0.1 | RESULT: UP (Responded)
+[29/05/2026 11:47:25] TEST - Asset ID: 2 | IP: 127.0.0.1 | RESULT: UP (Responded)
+[29/05/2026 11:47:34] TEST - Asset ID: 3 | IP: 192.168.254.254 | RESULT: DOWN (No Response)
+   ↳ [CRITICAL INCIDENT #INC-5001]
+     STATUS: OPEN | SEVERITY: HIGH
+     ACTION REQUIRED: Check routing or physical connectivity for Asset ID 3.
+   ----------------------------------------------------------------------
+[29/05/2026 11:47:43] TEST - Asset ID: 4 | IP: 10.255.255.1 | RESULT: DOWN (No Response)
+   ↳ [CRITICAL INCIDENT #INC-5002]
+     STATUS: OPEN | SEVERITY: HIGH
+     ACTION REQUIRED: Check routing or physical connectivity for Asset ID 4.
+   ----------------------------------------------------------------------
+[29/05/2026 11:48:44] TEST - Asset ID: 1 | IP: 127.0.0.1 | RESULT: UP (Responded)
+[29/05/2026 11:48:45] TEST - Asset ID: 2 | IP: 127.0.0.1 | RESULT: UP (Responded)
+[29/05/2026 11:48:54] TEST - Asset ID: 3 | IP: 192.168.254.254 | RESULT: DOWN (No Response)
+   ↳ [CRITICAL INCIDENT #INC-5003]
+     STATUS: OPEN | SEVERITY: HIGH
+     ACTION REQUIRED: Check routing or physical connectivity for Asset ID 3.
+   ----------------------------------------------------------------------
+[29/05/2026 11:49:03] TEST - Asset ID: 4 | IP: 10.255.255.1 | RESULT: DOWN (No Response)
+   ↳ [CRITICAL INCIDENT #INC-5004]
+     STATUS: OPEN | SEVERITY: HIGH
+     ACTION REQUIRED: Check routing or physical connectivity for Asset ID 4.
+   ----------------------------------------------------------------------
+[29/05/2026 11:55:19] TEST - Asset ID: 4 | IP: 10.255.255.1 | RESULT: DOWN (No Response)
+   ↳ [CRITICAL INCIDENT #INC-5001]
+     STATUS: OPEN | SEVERITY: HIGH
+     ACTION REQUIRED: Check routing or physical connectivity for Asset ID 4.
+   ----------------------------------------------------------------------

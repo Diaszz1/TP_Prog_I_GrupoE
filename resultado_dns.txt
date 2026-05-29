@@ -1,7 +1,5 @@
-Server:  UnKnown
-Address:  10.234.99.117
+Server:  ns3.ipvc.pt
+Address:  193.137.65.5
 
-Name:    facebook.com
-Addresses:  2a03:2880:f152:82:face:b00c:0:25de
-	  157.240.212.35
+Name:    ipvc.pt
 

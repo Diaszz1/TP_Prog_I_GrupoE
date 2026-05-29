@@ -1,9 +1,0 @@
-# Ignore temporary network diagnostic outputs
-resultado_ping.txt
-resultado_rede_local.txt
-resultado_arp.txt
-resultado_dns.txt
-resultado_rota.txt
-
-# Ignore logs
-log_monitorizacao.txt

@@ -25,8 +25,33 @@ typedef struct {
     int responded;
 } PingResult;
 
-typedef enum {WINDOWS, LINUX } OS_TYPE;
+typedef enum {WINDOWS, LINUX, MACOS } OS_TYPE;
 OS_TYPE currentOS = WINDOWS;
+
+typedef struct SensorReading {
+    char code[20];
+    char type[50];
+    float value;
+    char unit[5];
+    char status[20];
+} SensorReading;
+
+typedef struct {
+    SensorReading* top;
+} SensorStack;
+
+typedef struct SensorIncident {
+    int ticketID;
+    char sensorcode[20];
+    char issueDescription[120];
+    char status[20];
+    struct SensorIncident* next; 
+} SensorIncident;
+
+typedef struct {
+    SensorIncident* front;
+    SensorIncident* rear;
+} IncidentQueue;
 
 void clearScreen() {
     if (currentOS == WINDOWS) {
@@ -36,35 +61,16 @@ void clearScreen() {
     }
 }
 
-void configureOperatingSystem() {
-    int choice;
-    do {
-        printf("\n=========================================");
-        printf("\n    SELECT ENVIRONMENT / OPERATING SYSTEM");
-        printf("\n=========================================");
-        printf("\n 1. Microsoft Windows");
-        printf("\n 2. Linux (Ubuntu, Tails, Kali, etc.)");
-        printf("\n=========================================");
-        printf("\nSelect option (1-2): ");
-        
-        if (scanf("%d", &choice) != 1) {
-            int c; while ((c = getchar()) != '\n' && c != EOF);
-            choice = -1;
-        } else {
-            int c; while ((c = getchar()) != '\n' && c != EOF);
-        }
-
-        if (choice == 1) {
-            currentOS = WINDOWS;
-        } else if (choice == 2) {
-            currentOS = LINUX;
-        } else {
-            printf("\n[ERROR] Invalid choice. Please select 1 or 2.\n");
-        }
-    } while (choice != 1 && choice != 2);
-
-    clearScreen();
-    printf("\n>>> System configured successfully.\n");
+OS_TYPE detectOperatingSystem() {
+    #if defined(_WIN32) || defined(_WIN64)
+        return WINDOWS;
+    #elif defined(__APPLE__) || defined(__MACH__)
+        return MACOS;
+    #elif defined(__linux__)
+        return LINUX;
+    #else
+        return LINUX;
+    #endif
 }
 
 int nextEquipementId = 1;
@@ -1035,7 +1041,7 @@ PingResult processAssetPing(Node* target) {
 
     printf("\n--------------------------------------------------");
     printf("\n[NOC] Testing connectivity to: %s (%s)", target->data.name, target->data.ip);
-    printf("\n[NOC] Sending 4 ICMP echo requests... Please wait.");
+    printf("\n[NOC] Sending 2 ICMP echo requests... Please wait.");
     printf("\n--------------------------------------------------\n");
 
     char command[150];
@@ -1264,10 +1270,27 @@ void menuConnectivity(Node* list) {
     } while (option != 0);
 }
 
+void initSensorStack(SensorStack* s) { s->top = NULL; }
+
+void initIncidentQueue(IncidentQueue* q) { q->front = NULL; q->rear = NULL; }
+
 int main() {
     Node* equipmentList = NULL;
     equipmentList = loadInventoryFromBinary(equipmentList);
-    configureOperatingSystem();
+    currentOS = detectOperatingSystem();
+
+    if (currentOS == WINDOWS) {
+        printf("\n>>> [SYSTEM] Windows Environment Detected Automatically.\n");
+    } else if (currentOS == MACOS) {
+        printf("\n>>> [SYSTEM] macOS Environment Detected Automatically.\n");
+    } else {
+        printf("\n>>> [SYSTEM] Linux Environment Detected Automatically.\n");
+    }
+
+    SensorStack sensorStack;
+    IncidentQueue incidentQueue;
+    initSensorStack(&sensorStack);
+    initIncidentQueue(&incidentQueue);
 
     int option;
 
