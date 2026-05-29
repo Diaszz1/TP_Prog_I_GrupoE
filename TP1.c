@@ -1040,9 +1040,9 @@ PingResult processAssetPing(Node* target) {
 
     char command[150];
     if (currentOS == WINDOWS) {
-        sprintf(command, "ping -n 4 %s > resultado_ping.txt", target->data.ip);
+        sprintf(command, "ping -n 2 %s > resultado_ping.txt", target->data.ip);
     } else {
-        sprintf(command, "ping -c 4 %s > resultado_ping.txt", target->data.ip);
+        sprintf(command, "ping -c 2 %s > resultado_ping.txt", target->data.ip);
     }
     system(command);
 

@@ -16,3 +16,8 @@
 [26/05/2026 19:53:52] TEST - Asset ID: 2 | IP: 1.1.1.1 | RESULT: UP (Responded)
 [27/05/2026 16:46:00] TEST - Asset ID: 1 | IP: 127.0.0.1 | RESULT: UP (Responded)
 [27/05/2026 16:46:03] TEST - Asset ID: 2 | IP: 1.1.1.1 | RESULT: UP (Responded)
+[29/05/2026 10:38:28] TEST - Asset ID: 3 | IP: 192.168.254.254 | RESULT: DOWN (No Response)
+   ↳ [CRITICAL INCIDENT #INC-5001]
+     STATUS: OPEN | SEVERITY: HIGH
+     ACTION REQUIRED: Check routing or physical connectivity for Asset ID 3.
+   ----------------------------------------------------------------------
