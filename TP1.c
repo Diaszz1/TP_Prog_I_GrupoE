@@ -1091,16 +1091,27 @@ void runGeneralNetworkTest(Node* list) {
 
     Node* current = list;
     int totalTested = 0;
+    int onlineAssets = 0;
 
     while (current != NULL) {
-        processAssetPing(current);
         totalTested++;
+        PingResult r = processAssetPing(current);
+        if (r.responded) {
+            onlineAssets++;
+        }
         current = current->next;
     }
 
+    float avaliability = ((float)onlineAssets / totalTested) * 100;
+
     printf("\n=========================================");
-    printf("\n>>> General Sweep Completed. Total Monitored Endpoints: %d\n", totalTested);
-    printf("=========================================\n");
+    printf("\n       NETWORK TEST COMPLETED            ");
+    printf("\n=========================================");
+    printf("\n  Total Assets Checked: %d", totalTested);
+    printf("\n  Devices Online:       %d", onlineAssets);
+    printf("\n  Devices Offline:      %d", totalTested - onlineAssets);
+    printf("\n  Overall SLA Health:   %.2f%%", avaliability);
+    printf("\n=========================================\n");
 }
 
 void runLocalNetworkDiagnostic() {
