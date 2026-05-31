@@ -1209,20 +1209,25 @@ void pushSensorReading(SensorStack* s, SensorReading data) {
 
 void enqueueSensorIncident(IncidentQueue* q, const char* sensorCode, const char* status) {
     SensorIncident* newNode = (SensorIncident*)malloc(sizeof(SensorIncident));
-    if (newNode != NULL) {
-        static int ticketCounter = 7001;
-        newNode->ticketID = ticketCounter++;
-        strcpy(newNode->sensorCode, sensorCode);
-        sprintf(newNode->issueDescription, "ALARM! Sensor %s status: %s", sensorCode, status);
-        strcpy(newNode->status, "OPEN");
-        newNode->next = NULL;
+    if (newNode == NULL) {
+        printf("\n[ERROR] Memory allocation failed for incident ticket!\n");
+        return;
+    }
+    
+    static int ticketCounter = 7001; 
+    
+    newNode->ticketID = ticketCounter++;
+    strcpy(newNode->sensorCode, sensorCode);
+    
+    sprintf(newNode->issueDescription, "CRITICAL: Sensor %s triggered automated alert. Ingested status: %s", sensorCode, status);
+    strcpy(newNode->status, "OPEN");
+    newNode->next = NULL;
 
-        if (q->rear == NULL) {
-            q->front = q->rear = newNode;
-        } else {
-            q->rear->next = newNode;
-            q->rear = newNode;
-        }
+    if (q->rear == NULL) { 
+        q->front = q->rear = newNode;
+    } else {
+        q->rear->next = newNode;
+        q->rear = newNode;
     }
 }
 
@@ -1453,6 +1458,33 @@ void displayAnomalousReadings(SensorStack* s) {
     printf("\n=========================================================================\n");
 }
 
+void displayPendingIncidents(IncidentQueue* q) {
+    if (q->front == NULL) {
+        printf("\n=========================================================================");
+        printf("\n                      INCIDENT MANAGEMENT QUEUE                          ");
+        printf("\n=========================================================================");
+        printf("\n[SUCCESS] Excellent! No pending technical incidents in the queue.");
+        printf("\n=========================================================================\n");
+        return;
+    }
+
+    printf("\n=========================================================================");
+    printf("\n                    ACTIVE TECHNICAL INCIDENTS (FIFO)                    ");
+    printf("\n=========================================================================");
+    printf("\n%-10s %-15s %-10s %-45s", "TICKET ID", "SENSOR CODE", "STATUS", "DESCRIPTION");
+    printf("\n-------------------------------------------------------------------------");
+
+    SensorIncident* current = q->front;
+    while (current != NULL) {
+        printf("\n%-10d %-15s %-10s %-45s", current->ticketID, current->sensorCode, current->status, current->issueDescription);
+        current = current->next;
+    }
+
+    printf("\n=========================================================================");
+    printf("\n[INFO] Technical support must resolve tickets in the order displayed (FIFO).\n");
+    printf("=========================================================================\n");
+}
+
 void menuSensors(SensorStack* stack, IncidentQueue* queue) {
     int option = -1;
 
@@ -1463,6 +1495,7 @@ void menuSensors(SensorStack* stack, IncidentQueue* queue) {
         printf("\n  1. List All Recent Readings (Full Stack)");
         printf("\n  2. Search Readings by Sensor Code");
         printf("\n  3. Display Anomalous Readings Only");
+        printf("\n  4. Display Pending Incident Tickets");
         printf("\n  0. Return to Main Menu");
         printf("\n=========================================");
         printf("\nSelect an option: ");
@@ -1485,6 +1518,10 @@ void menuSensors(SensorStack* stack, IncidentQueue* queue) {
             case 3:
                 clearScreen();
                 displayAnomalousReadings(stack);
+                break;
+            case 4:
+                clearScreen();
+                displayPendingIncidents(queue);
                 break;
             case 0:
                 printf("\nReturning to Main Menu...\n");
