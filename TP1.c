@@ -34,6 +34,7 @@ typedef struct SensorReading {
     float value;
     char unit[5];
     char status[20];
+    struct SensorReading* next;
 } SensorReading;
 
 typedef struct {
@@ -42,7 +43,7 @@ typedef struct {
 
 typedef struct SensorIncident {
     int ticketID;
-    char sensorcode[20];
+    char sensorCode[20];
     char issueDescription[120];
     char status[20];
     struct SensorIncident* next; 
@@ -1188,6 +1189,43 @@ void runRouteTracerDiagnostic() {
     printf("\nRoute tracer results for '%s' exported to 'resultado_rota.txt'.\n", target);
 }
 
+void initSensorStack(SensorStack* s) {
+    s->top = NULL;
+}
+
+void initIncidentQueue(IncidentQueue* q) {
+    q->front = NULL;
+    q->rear = NULL;
+}
+
+void pushSensorReading(SensorStack* s, SensorReading data) {
+    SensorReading* newNode = (SensorReading*)malloc(sizeof(SensorReading));
+    if (newNode != NULL) {
+        *newNode = data;
+        newNode->next = s->top;
+        s->top = newNode;
+    }
+}
+
+void enqueueSensorIncident(IncidentQueue* q, const char* sensorCode, const char* status) {
+    SensorIncident* newNode = (SensorIncident*)malloc(sizeof(SensorIncident));
+    if (newNode != NULL) {
+        static int ticketCounter = 7001;
+        newNode->ticketID = ticketCounter++;
+        strcpy(newNode->sensorCode, sensorCode);
+        sprintf(newNode->issueDescription, "ALARM! Sensor %s status: %s", sensorCode, status);
+        strcpy(newNode->status, "OPEN");
+        newNode->next = NULL;
+
+        if (q->rear == NULL) {
+            q->front = q->rear = newNode;
+        } else {
+            q->rear->next = newNode;
+            q->rear = newNode;
+        }
+    }
+}
+
 void importSensorReadings(SensorStack* s, IncidentQueue* q) {
     FILE* file = fopen("sensors_rack.txt", "r");
     if (file == NULL) {
@@ -1318,6 +1356,63 @@ void menuConnectivity(Node* list) {
     } while (option != 0);
 }
 
+void listRecentReadings(SensorStack* s) {
+    if (s->top == NULL) {
+        printf("\nNo sensor readings available in the stack.\n");
+        return;
+    }
+
+    printf("\n=========================================================================");
+    printf("\n                      RECENT SENSOR READINGS (LIFO)                      ");
+    printf("\n=========================================================================");
+    printf("\n%-15s %-25s %-10s %-10s %-15s", "CODE", "TYPE", "VALUE", "UNIT", "STATUS");
+    printf("\n-------------------------------------------------------------------------");
+
+    SensorReading* current = s->top;
+    while (current != NULL) {
+        printf("\n%-15s %-25s %-10.2f %-10s %-15s", current->code, current->type, current->value, current->unit, current->status);
+        current = current->next;
+    }
+
+    printf("\n=========================================================================\n");
+
+}
+
+void menuReadings(SensorStack* stack) {
+    int option = -1;
+
+    do {
+        printf("\n=========================================");
+        printf("\n       SENSOR DATA NAVIGATION MENU       ");
+        printf("\n=========================================");
+        printf("\n  1. List All Recent Readings (Full Stack)");
+        printf("\n  0. Back to Sensor Dashboard");
+        printf("\n=========================================");
+        printf("\nSelect an option: ");
+
+        if (scanf("%d", &option) != 1) {
+            while (getchar() != '\n');
+            continue;
+        }
+        while (getchar() != '\n');
+
+        switch (option) {
+            case 1:
+                clearScreen();
+                listRecentReadings(stack);
+                break;
+            case 0:
+                clearScreen();
+                printf("\nReturning to sensor dashboard...\n");
+                break;
+            default:
+                clearScreen();
+                printf("\nInvalid option. Please try again.\n");
+                break;
+        }
+    } while (option != 0);
+}
+
 void menuSensors(SensorStack* stack, IncidentQueue* queue) {
     int option = -1;
 
@@ -1325,6 +1420,7 @@ void menuSensors(SensorStack* stack, IncidentQueue* queue) {
         printf("\n=========================================");
         printf("\n       MINI NOC SYSTEM - SENSORS         ");
         printf("\n=========================================");
+        printf("\n 1. Navigate Sensor Readings");
         printf("\n 0. Return to Main Menu");
         printf("\n=========================================");
         printf("\nChoose an option: ");
@@ -1338,6 +1434,10 @@ void menuSensors(SensorStack* stack, IncidentQueue* queue) {
         getchar();
 
         switch (option) {
+            case 1:
+                clearScreen();
+                menuReadings(stack);
+                break;
             case 0:
                 clearScreen();
                 printf("\nReturning to main menu...\n");

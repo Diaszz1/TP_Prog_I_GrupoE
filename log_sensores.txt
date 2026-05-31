@@ -1,0 +1,13 @@
+=== SENSOR DATA IMPORT LOG ===
+Processed Sensor: TEMP_RACK | Value: 38.50 C | Status: CRITICAL
+Processed Sensor: HUM_RACK | Value: 72.00 % | Status: WARNING
+Processed Sensor: UPS_BAT | Value: 18.00 % | Status: CRITICAL
+Processed Sensor: UPS_POWER | Value: 0.00 - | Status: GRID_FAILURE
+Processed Sensor: TEMP_AMB | Value: 22.40 C | Status: OK
+Processed Sensor: HUM_AMB | Value: 45.00 % | Status: OK
+Processed Sensor: UPS_LOAD | Value: 35.50 % | Status: OK
+Processed Sensor: FAN_RACK | Value: 4200.00 RPM | Status: OK
+Processed Sensor: TEMP_CPU | Value: 78.20 C | Status: CRITICAL
+Processed Sensor: AIR_FLOW | Value: 12.50 m3/h | Status: WARNING
+
+Total Records Loaded: 10 | Total Alarms Enqueued: 6
