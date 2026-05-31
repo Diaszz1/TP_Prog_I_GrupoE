@@ -1418,6 +1418,41 @@ void searchSensorByCode(SensorStack* s) {
     printf("\n=========================================================================\n");
 }
 
+void displayAnomalousReadings(SensorStack* s) {
+    if (s->top == NULL) {
+        printf("\nNo sensor readings available in the stack.\n");
+        return;
+    }
+
+    SensorReading* current = s->top;
+    int anomalyCount = 0;
+
+    printf("\n=========================================================================");
+    printf("\n                    ACTIVE SENSOR ANOMALIES DETECTED                     ");
+    printf("\n=========================================================================");
+    printf("\n%-15s %-25s %-10s %-10s %-15s", "CODE", "TYPE", "VALUE", "UNIT", "STATUS");
+    printf("\n-------------------------------------------------------------------------");
+
+    while (current != NULL) {
+        if (strcmp(current->status, "WARNING") == 0 ||
+            strcmp(current->status, "CRITICAL") == 0 ||
+            strcmp(current->status, "GRID_FAILURE") == 0) {
+
+            printf("\n%-15s %-25s %-10.2f %-10s %-15s", current->code, current->type, current->value, current->unit, current->status);
+            anomalyCount++;
+    }
+    current = current->next;
+    }
+
+    printf("\n=========================================================================");
+    if (anomalyCount == 0) {
+        printf("\n>>> No active sensor anomalies detected in the stack.\n");
+    } else {
+        printf("\n>>> Total anomalous readings detected: %d\n", anomalyCount);
+    }
+    printf("\n=========================================================================\n");
+}
+
 void menuReadings(SensorStack* stack) {
     int option = -1;
 
@@ -1427,6 +1462,7 @@ void menuReadings(SensorStack* stack) {
         printf("\n=========================================");
         printf("\n  1. List All Recent Readings (Full Stack)");
         printf("\n  2. Search Readings by Sensor Code");
+        printf("\n  3. Display Active Anomalies (WARNING/CRITICAL/GRID_FAILURE)");
         printf("\n  0. Back to Sensor Dashboard");
         printf("\n=========================================");
         printf("\nSelect an option: ");
@@ -1446,6 +1482,10 @@ void menuReadings(SensorStack* stack) {
                 clearScreen();
                 searchSensorByCode(stack);
                 break;    
+            case 3:
+                clearScreen();
+                displayAnomalousReadings(stack);
+                break;
             case 0:
                 clearScreen();
                 printf("\nReturning to sensor dashboard...\n");
