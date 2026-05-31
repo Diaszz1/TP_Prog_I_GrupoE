@@ -1378,6 +1378,46 @@ void listRecentReadings(SensorStack* s) {
 
 }
 
+void searchSensorByCode(SensorStack* s) {
+    if (s->top == NULL) {
+        printf("\nNo sensor readings available in the stack.\n");
+        return;
+    }
+
+    char searchCode[20];
+
+    printf("Enter Sensor Code to search (e.g., TEMP_RACK, UPS_BAT): ");
+    scanf("%19s", searchCode);
+    while (getchar() != '\n');
+
+    clearScreen();
+
+    SensorReading* current = s->top;
+    int foundCount = 0;
+
+    printf("\n=========================================================================");
+    printf("\n                      SEARCH RESULTS FOR: %s", searchCode);
+    printf("\n=========================================================================");
+    printf("\n%-15s %-25s %-10s %-10s %-15s", "CODE", "TYPE", "VALUE", "UNIT", "STATUS");
+    printf("\n-------------------------------------------------------------------------");
+
+    while (current != NULL) {
+        if (strcasecmp(current->code, searchCode) == 0) {
+            printf("\n%-15s %-25s %-10.2f %-10s %-15s", current->code, current->type, current->value, current->unit, current->status);
+            foundCount++;
+        }
+        current = current->next;
+    }
+
+    printf("\n=========================================================================");
+    if (foundCount == 0) {
+        printf("\n>>> No sensor readings found with code '%s'.\n", searchCode);
+    } else {
+        printf("\n>>> Total readings found with code '%s': %d\n", searchCode, foundCount);
+    }
+    printf("\n=========================================================================\n");
+}
+
 void menuReadings(SensorStack* stack) {
     int option = -1;
 
@@ -1386,6 +1426,7 @@ void menuReadings(SensorStack* stack) {
         printf("\n       SENSOR DATA NAVIGATION MENU       ");
         printf("\n=========================================");
         printf("\n  1. List All Recent Readings (Full Stack)");
+        printf("\n  2. Search Readings by Sensor Code");
         printf("\n  0. Back to Sensor Dashboard");
         printf("\n=========================================");
         printf("\nSelect an option: ");
@@ -1401,6 +1442,10 @@ void menuReadings(SensorStack* stack) {
                 clearScreen();
                 listRecentReadings(stack);
                 break;
+            case 2:
+                clearScreen();
+                searchSensorByCode(stack);
+                break;    
             case 0:
                 clearScreen();
                 printf("\nReturning to sensor dashboard...\n");
