@@ -1453,25 +1453,25 @@ void displayAnomalousReadings(SensorStack* s) {
     printf("\n=========================================================================\n");
 }
 
-void menuReadings(SensorStack* stack) {
+void menuSensors(SensorStack* stack, IncidentQueue* queue) {
     int option = -1;
 
     do {
         printf("\n=========================================");
-        printf("\n       SENSOR DATA NAVIGATION MENU       ");
+        printf("\n     MINI NOC SYSTEM - SENSORS    ");
         printf("\n=========================================");
         printf("\n  1. List All Recent Readings (Full Stack)");
         printf("\n  2. Search Readings by Sensor Code");
-        printf("\n  3. Display Active Anomalies (WARNING/CRITICAL/GRID_FAILURE)");
-        printf("\n  0. Back to Sensor Dashboard");
+        printf("\n  3. Display Anomalous Readings Only");
+        printf("\n  0. Return to Main Menu");
         printf("\n=========================================");
         printf("\nSelect an option: ");
-
+        
         if (scanf("%d", &option) != 1) {
             while (getchar() != '\n');
             continue;
         }
-        while (getchar() != '\n');
+        while (getchar() != '\n'); 
 
         switch (option) {
             case 1:
@@ -1481,60 +1481,19 @@ void menuReadings(SensorStack* stack) {
             case 2:
                 clearScreen();
                 searchSensorByCode(stack);
-                break;    
+                break;
             case 3:
                 clearScreen();
                 displayAnomalousReadings(stack);
                 break;
             case 0:
-                clearScreen();
-                printf("\nReturning to sensor dashboard...\n");
+                printf("\nReturning to Main Menu...\n");
                 break;
             default:
-                clearScreen();
-                printf("\nInvalid option. Please try again.\n");
-                break;
+                printf("\n[ERROR] Invalid choice. Try again.\n");
         }
     } while (option != 0);
 }
-
-void menuSensors(SensorStack* stack, IncidentQueue* queue) {
-    int option = -1;
-
-    do {
-        printf("\n=========================================");
-        printf("\n       MINI NOC SYSTEM - SENSORS         ");
-        printf("\n=========================================");
-        printf("\n 1. Navigate Sensor Readings");
-        printf("\n 0. Return to Main Menu");
-        printf("\n=========================================");
-        printf("\nChoose an option: ");
-
-        if(scanf("%d", &option) != 1) {
-            printf("Invalid input. Please enter a number.\n");
-            int c;
-            while ((c = getchar()) != '\n' && c != EOF);
-            continue;
-        }
-        getchar();
-
-        switch (option) {
-            case 1:
-                clearScreen();
-                menuReadings(stack);
-                break;
-            case 0:
-                clearScreen();
-                printf("\nReturning to main menu...\n");
-                break;
-            default:
-                clearScreen();
-                printf("\nInvalid option. Please try again.\n");
-                break;
-        }
-    } while (option != 0);
-}
-
 int main() {
     Node* equipmentList = NULL;
     equipmentList = loadInventoryFromBinary(equipmentList);
