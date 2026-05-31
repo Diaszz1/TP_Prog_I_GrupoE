@@ -1195,7 +1195,7 @@ void importSensorReadings(SensorStack* s, IncidentQueue* q) {
         return;
     }
 
-    FILE* regFile = fopen("import_register.txt", "w");
+    FILE* regFile = fopen("log_sensores.txt", "w");
     if (regFile != NULL) {
         fprintf(regFile, "=== SENSOR DATA IMPORT LOG ===\n");
     }
@@ -1231,10 +1231,11 @@ void importSensorReadings(SensorStack* s, IncidentQueue* q) {
     printf("\n=========================================");
     printf("\n  Readings Saved to Stack: %d", importedCount);
     printf("\n  Incidents Pushed to Queue: %d", incidentCount);
-    printf("\n  Audit log saved to 'import_register.txt'");
+    printf("\n  Audit log saved to 'log_sensores.txt'");
     printf("\n=========================================\n");
-    
+
 }
+
 void menuConnectivity(Node* list) {
     int option;
     do {
@@ -1317,6 +1318,38 @@ void menuConnectivity(Node* list) {
     } while (option != 0);
 }
 
+void menuSensors(SensorStack* stack, IncidentQueue* queue) {
+    int option = -1;
+
+    do {
+        printf("\n=========================================");
+        printf("\n       MINI NOC SYSTEM - SENSORS         ");
+        printf("\n=========================================");
+        printf("\n 0. Return to Main Menu");
+        printf("\n=========================================");
+        printf("\nChoose an option: ");
+
+        if(scanf("%d", &option) != 1) {
+            printf("Invalid input. Please enter a number.\n");
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF);
+            continue;
+        }
+        getchar();
+
+        switch (option) {
+            case 0:
+                clearScreen();
+                printf("\nReturning to main menu...\n");
+                break;
+            default:
+                clearScreen();
+                printf("\nInvalid option. Please try again.\n");
+                break;
+        }
+    } while (option != 0);
+}
+
 int main() {
     Node* equipmentList = NULL;
     equipmentList = loadInventoryFromBinary(equipmentList);
@@ -1335,6 +1368,8 @@ int main() {
     initSensorStack(&sensorStack);
     initIncidentQueue(&incidentQueue);
 
+    importSensorReadings(&sensorStack, &incidentQueue);
+
     int option;
 
     do {
@@ -1343,6 +1378,7 @@ int main() {
         printf("\n=========================================");
         printf("\n 1. Inventory Management");
         printf("\n 2. Connectivity & Network Tests");
+        printf("\n 3. Sensor Data & Incident Management");
         printf("\n 0. Exit Program");
         printf("\n=========================================");
         printf("\nChoose an option: ");
@@ -1364,6 +1400,11 @@ int main() {
             case 2:
                 clearScreen();
                 menuConnectivity(equipmentList);
+                clearScreen();
+                break;
+            case 3:
+                clearScreen();
+                menuSensors(&sensorStack, &incidentQueue);
                 clearScreen();
                 break;
             case 0:
