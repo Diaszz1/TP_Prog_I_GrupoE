@@ -1188,6 +1188,53 @@ void runRouteTracerDiagnostic() {
     printf("\nRoute tracer results for '%s' exported to 'resultado_rota.txt'.\n", target);
 }
 
+void importSensorReadings(SensorStack* s, IncidentQueue* q) {
+    FILE* file = fopen("sensors_rack.txt", "r");
+    if (file == NULL) {
+        printf("\nNo sensor data file found. Skipping sensor import.\n");
+        return;
+    }
+
+    FILE* regFile = fopen("import_register.txt", "w");
+    if (regFile != NULL) {
+        fprintf(regFile, "=== SENSOR DATA IMPORT LOG ===\n");
+    }
+
+    SensorReading temp;
+    int importedCount = 0;
+    int incidentCount = 0;
+
+    while (fscanf(file, " %19[^;];%49[^;];%f;%4[^;];%19[^\n]\n", temp.code, temp.type, &temp.value, temp.unit, temp.status) == 5) {
+        pushSensorReading(s, temp);
+        importedCount++;
+
+        if (regFile != NULL) {
+            fprintf(regFile, "Processed Sensor: %s | Value: %.2f %s | Status: %s\n", temp.code, temp.value, temp.unit, temp.status);
+        }
+
+        if (strcmp(temp.status, "WARNING") == 0 || 
+            strcmp(temp.status, "CRITICAL") == 0 || 
+            strcmp(temp.status, "GRID_FAILURE") == 0) {
+            
+            enqueueSensorIncident(q, temp.code, temp.status);
+            incidentCount++;
+        }
+    }
+    fclose(file);
+    if (regFile != NULL) {
+        fprintf(regFile, "\nTotal Records Loaded: %d | Total Alarms Enqueued: %d\n", importedCount, incidentCount);
+        fclose(regFile);
+    }
+
+    printf("\n=========================================");
+    printf("\n      FILE INGESTION COMPLETED           ");
+    printf("\n=========================================");
+    printf("\n  Readings Saved to Stack: %d", importedCount);
+    printf("\n  Incidents Pushed to Queue: %d", incidentCount);
+    printf("\n  Audit log saved to 'import_register.txt'");
+    printf("\n=========================================\n");
+    
+}
 void menuConnectivity(Node* list) {
     int option;
     do {
@@ -1269,10 +1316,6 @@ void menuConnectivity(Node* list) {
         }
     } while (option != 0);
 }
-
-void initSensorStack(SensorStack* s) { s->top = NULL; }
-
-void initIncidentQueue(IncidentQueue* q) { q->front = NULL; q->rear = NULL; }
 
 int main() {
     Node* equipmentList = NULL;
