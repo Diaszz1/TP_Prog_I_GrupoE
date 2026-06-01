@@ -62,6 +62,29 @@ void clearScreen() {
     }
 }
 
+typedef struct TechnicalIncident {
+    int ticketId;
+    char tragetcode[30];
+    char type[20];
+    char description[100];
+    char priority[10];
+    char timestamp[20];
+    char technician[40];
+    char status[15];
+    struct TechnicalIncident* next;
+} TechnicalIncident;
+
+typedef struct {
+    TechnicalIncident* front;
+    TechnicalIncident* rear;
+} IncidentQueue;
+
+void getCurrentDateTime(char* buffer) {
+    time_t t = time(NULL);
+    struct tm* tm_info = localtime(&t);
+    strftime(buffer, 20, "%d-%m-%Y %H:%M", tm_info);
+}
+
 OS_TYPE detectOperatingSystem() {
     #if defined(_WIN32) || defined(_WIN64)
         return WINDOWS;
@@ -1575,6 +1598,43 @@ void menuSensors(SensorStack* stack, IncidentQueue* queue) {
         }
     } while (option != 0);
 }
+
+void menuIncidents(IncidentQueue* queue) {
+    int option = -1;
+
+    do {
+        printf("\n=========================================");
+        printf("\n     MODULO 4 - INCIDENT MANAGEMENT     ");
+        printf("\n=========================================");
+        printf("\n  1. Log new Incident Manually");
+        printf("\n  0. Return to Main Menu");
+        printf("\n=========================================");
+        printf("\nSelect an option: ");
+
+        if (scanf("%d", &option) != 1) {
+            while (getchar() != '\n');
+            continue;
+        }
+        while (getchar() != '\n');
+
+        switch (option) {
+            case 1:
+                clearScreen();
+                createManualIncident(queue);
+                break;
+            case 0:
+                printf("\nReturning to Main Menu");
+                break;
+            default:
+                printf("Invalid option. Please try again.\n");
+        }
+
+    } while (option != 0);
+    {
+        /* code */
+    }
+    
+}
 int main() {
     Node* equipmentList = NULL;
     equipmentList = loadInventoryFromBinary(equipmentList);
@@ -1605,7 +1665,8 @@ int main() {
         printf("\n=========================================");
         printf("\n 1. Inventory Management");
         printf("\n 2. Connectivity & Network Tests");
-        printf("\n 3. Sensor Data & Incident Management");
+        printf("\n 3. Sensor Data");
+        printf("\n 4. Incident Managment");
         printf("\n 0. Exit Program");
         printf("\n=========================================");
         printf("\nChoose an option: ");
@@ -1634,6 +1695,9 @@ int main() {
                 menuSensors(&sensorStack, &incidentQueue);
                 clearScreen();
                 break;
+            case 4:
+                clearScreen();
+                menuIncidents
             case 0:
                 clearScreen();
                 printf("\nSaving session data to backup file...\n"); 
