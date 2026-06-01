@@ -1232,27 +1232,54 @@ void enqueueSensorIncident(IncidentQueue* q, const char* sensorCode, const char*
 }
 
 void importSensorReadings(SensorStack* s, IncidentQueue* q) {
+
     FILE* file = fopen("sensors_rack.txt", "r");
     if (file == NULL) {
-        printf("\nNo sensor data file found. Skipping sensor import.\n");
+        printf("\n[ERROR] Could not open 'sensors_rack.txt'. Ensure API download worked.\n");
         return;
     }
 
     FILE* regFile = fopen("log_sensores.txt", "w");
-    if (regFile != NULL) {
-        fprintf(regFile, "=== SENSOR DATA IMPORT LOG ===\n");
-    }
 
-    SensorReading temp;
+    char line[256];
     int importedCount = 0;
     int incidentCount = 0;
 
-    while (fscanf(file, " %19[^;];%49[^;];%f;%4[^;];%19[^\n]\n", temp.code, temp.type, &temp.value, temp.unit, temp.status) == 5) {
+    while (fgets(line, sizeof(line), file)) {
+        
+        if (line[0] == '#' || line[0] == '\n' || line[0] == '\r') {
+            continue;
+        }
+        
+        if (strncmp(line, "CODE", 4) == 0 || strncmp(line, "code", 4) == 0) {
+            continue;
+        }
+
+        SensorReading temp;
+
+        char* token = strtok(line, ";\n\r");
+        if (token != NULL) {
+            strcpy(temp.code, token);
+        } else continue;
+
+        token = strtok(NULL, ";\n\r");
+        if (token != NULL) strcpy(temp.type, token);
+
+        token = strtok(NULL, ";\n\r");
+        if (token != NULL) temp.value = atof(token);
+
+        token = strtok(NULL, ";\n\r");
+        if (token != NULL) strcpy(temp.unit, token);
+
+        token = strtok(NULL, ";\n\r");
+        if (token != NULL) strcpy(temp.status, token);
+
         pushSensorReading(s, temp);
         importedCount++;
 
         if (regFile != NULL) {
-            fprintf(regFile, "Processed Sensor: %s | Value: %.2f %s | Status: %s\n", temp.code, temp.value, temp.unit, temp.status);
+            fprintf(regFile, "Processed Sensor: %s | Value: %.2f %s | Status: %s\n", 
+                    temp.code, temp.value, temp.unit, temp.status);
         }
 
         if (strcmp(temp.status, "WARNING") == 0 || 
@@ -1263,20 +1290,37 @@ void importSensorReadings(SensorStack* s, IncidentQueue* q) {
             incidentCount++;
         }
     }
+
     fclose(file);
     if (regFile != NULL) {
-        fprintf(regFile, "\nTotal Records Loaded: %d | Total Alarms Enqueued: %d\n", importedCount, incidentCount);
+        fprintf(regFile, "\n==================================================\n");
+        fprintf(regFile, "Total Records Loaded: %d | Total Alarms Enqueued: %d\n", importedCount, incidentCount);
         fclose(regFile);
     }
 
-    printf("\n=========================================");
-    printf("\n      FILE INGESTION COMPLETED           ");
-    printf("\n=========================================");
+    printf("\n==================================================");
+    printf("\n             FILE INGESTION COMPLETED             ");
+    printf("\n==================================================");
     printf("\n  Readings Saved to Stack: %d", importedCount);
     printf("\n  Incidents Pushed to Queue: %d", incidentCount);
     printf("\n  Audit log saved to 'log_sensores.txt'");
-    printf("\n=========================================\n");
+    printf("\n==================================================\n");
+}
 
+int fetchSensorDataFromAPI() {
+    printf("Connecting to http://sensorlab.innominatum.pt ...\n ");
+
+    const char* cmd = "curl -s https://sensorlab.innominatum.pt/v1/sensors/export/legacy > C:\\Users\\asdia\\Desktop\\P1\\TP1\\sensors_rack.txt";
+
+    int status = system(cmd);
+
+    if (status == 0) {
+        printf("Live sensor data synchronized successfully from API!\n");
+        return 1;
+    } else {
+        printf("API unreachable. Falling back to cached local data.\n");
+        return 0;
+    }
 }
 
 void menuConnectivity(Node* list) {
@@ -1548,6 +1592,8 @@ int main() {
     IncidentQueue incidentQueue;
     initSensorStack(&sensorStack);
     initIncidentQueue(&incidentQueue);
+
+    fetchSensorDataFromAPI();
 
     importSensorReadings(&sensorStack, &incidentQueue);
 
