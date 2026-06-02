@@ -1716,6 +1716,40 @@ void createManualIncident(IncidentQueue* q, Node* invHead, SensorStack* s) {
     printf("=========================================\n");
 }
 
+void dequeueAndProcessIncident(IncidentQueue* q) {
+    if (q == NULL || q->front == NULL) {
+        printf("\n=========================================");
+        printf("\n          INCIDENT DESPATCH CENTER       ");
+        printf("\n=========================================");
+        printf("\n[INFO] No pending incidents to process.\n");
+        printf("=========================================\n");
+        return;
+    }
+
+    TechnicalIncident* temp = q->front;
+
+    printf("\n=========================================");
+    printf("\n          PROCESSING TICKET #%d          ", temp->ticketId);
+    printf("\n=========================================");
+    printf("\nTarget/Asset:  %s", temp->targetCode);
+    printf("\nAlert Type:    %s", temp->type);
+    printf("\nPriority:      %s", temp->priority);
+    printf("\nDescription:   %s", temp->description);
+    printf("\nLogged Time:   %s", temp->timestamp);
+    printf("\n-----------------------------------------");
+    printf("\n[STATUS] Dispatching technician: %s", temp->technician);
+    printf("\n[SUCCESS] Ticket solved and removed from active queue!");
+    printf("\n=========================================\n");
+
+    q->front = q->front->next;
+
+    if (q->front == NULL) {
+        q->rear = NULL;
+    }
+
+    free(temp);
+}
+
 void menuIncidents(IncidentQueue* queue, Node* invHead, SensorStack* sensorStack) {
     int option = -1;
 
@@ -1724,6 +1758,7 @@ void menuIncidents(IncidentQueue* queue, Node* invHead, SensorStack* sensorStack
         printf("\n     MODULO 4 - INCIDENT MANAGEMENT     ");
         printf("\n=========================================");
         printf("\n  1. Log new Incident Manually");
+        printf("\n  2. Run Automated Despatch");
         printf("\n  0. Return to Main Menu");
         printf("\n=========================================");
         printf("\nSelect an option: ");
@@ -1738,6 +1773,10 @@ void menuIncidents(IncidentQueue* queue, Node* invHead, SensorStack* sensorStack
             case 1:
                 clearScreen();
                 createManualIncident(queue, invHead, sensorStack);
+                break;
+            case 2:
+                clearScreen();
+                dequeueAndProcessIncident(queue);
                 break;
             case 0:
                 printf("\nReturning to Main Menu");
@@ -1765,7 +1804,9 @@ int main() {
     SensorStack sensorStack;
     IncidentQueue incidentQueue;
     initSensorStack(&sensorStack);
-    initIncidentQueue(&incidentQueue);
+    
+    incidentQueue.front = NULL;
+    incidentQueue.rear = NULL;
 
     fetchSensorDataFromAPI();
 
