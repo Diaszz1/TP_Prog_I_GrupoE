@@ -1251,13 +1251,20 @@ void enqueueSensorIncident(IncidentQueue* q, const char* sensorCode, const char*
     TechnicalIncident* newNode = (TechnicalIncident*)malloc(sizeof(TechnicalIncident));
     if (newNode == NULL) return;
     
-    static int ticketCounter = 7001; 
-    newNode->ticketId = ticketCounter++;
+    static int sensorTicketCounter = 7001; 
+    newNode->ticketId = sensorTicketCounter++;
     
     strcpy(newNode->targetCode, sensorCode);
     strcpy(newNode->type, "SENSOR_ANOMALY");
-    sprintf(newNode->description, "Automated alert triggered. Sensor status: %s", status);
-    strcpy(newNode->priority, "MEDIUM");
+    
+    sprintf(newNode->description, "ALERT: Sensor telemetry out of bounds. Current state marked as %s.", status);
+    
+    if (strcmp(status, "Critical") == 0 || strcmp(status, "CRITICAL") == 0) {
+        strcpy(newNode->priority, "HIGH");
+    } else {
+        strcpy(newNode->priority, "MEDIUM");
+    }
+    
     strcpy(newNode->technician, "Automation Bot");
     
     getCurrentDateTime(newNode->timestamp);
@@ -1270,6 +1277,9 @@ void enqueueSensorIncident(IncidentQueue* q, const char* sensorCode, const char*
         q->rear->next = newNode;
         q->rear = newNode;
     }
+
+    printf("\n[AUTOMATED ALERT] Created Incident Ticket #%d for sensor anomaly: %s (%s)\n", 
+           newNode->ticketId, newNode->targetCode, status);
 }
 
 void importSensorReadings(SensorStack* s, IncidentQueue* q) {
