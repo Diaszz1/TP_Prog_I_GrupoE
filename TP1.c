@@ -1955,6 +1955,56 @@ void menuIncidents(IncidentQueue* queue, Node* invHead, SensorStack* sensorStack
     } while (option != 0);  
 }
 
+void saveIncidentsToBinary(IncidentQueue* q) {
+    FILE* file = fopen("incidents_backup.bin", "wb");
+    if (file == NULL) {
+        printf("\n[ERROR] Failed to open incidents backup file.\n");
+        return;
+    }
+
+    int count = 0;
+    TechnicalIncident*current = q->front;
+
+    while (current != NULL) {
+        fwrite(current, sizeof(TechnicalIncident), 1, file);
+        count++;
+        current = current->next;
+    }
+    fclose(file);
+    printf("\n[INFO] %d incidents saved to 'incidents_backup.bin'.\n", count);
+}
+
+void loadIncidentsFromBinary(IncidentQueue* q) {
+    FILE* file = fopen("incidents_backup.bin", "rb");
+    if (file == NULL) {
+        printf("\n[INFO] No existing incident backup found. Starting with an empty queue.\n");
+        return;
+    }
+
+    TechnicalIncident tempRecord;
+    int count = 0;
+
+    while (fread(&tempRecord, sizeof(TechnicalIncident), 1, file) == 1) {
+        TechnicalIncident* newNode = (TechnicalIncident*)malloc(sizeof(TechnicalIncident));
+        if (newNode == NULL) {
+            printf("\n[ERROR] Memory allocation failure while loading incidents.\n");
+            break;
+        }
+        *newNode = tempRecord;
+        newNode->next = NULL;
+
+        if (q->rear == NULL) {
+            q->front = q->rear = newNode;
+        } else {
+            q->rear->next = newNode;
+            q->rear = newNode;
+        }
+        count++;
+    }
+    fclose(file);
+    printf("\n[INFO] %d incidents loaded from 'incidents_backup.bin'.\n", count);
+}
+
 int main() {
     Node* equipmentList = NULL;
     equipmentList = loadInventoryFromBinary(equipmentList);
@@ -1974,6 +2024,8 @@ int main() {
     
     incidentQueue.front = NULL;
     incidentQueue.rear = NULL;
+
+    loadIncidentsFromBinary(&incidentQueue);
 
     fetchSensorDataFromAPI();
 
@@ -2025,6 +2077,7 @@ int main() {
                 clearScreen();
                 printf("\nSaving session data to backup file...\n"); 
                 saveInventoryToBinary(equipmentList);
+                saveIncidentsToBinary(&incidentQueue);
                 printf("\nExiting program. Goodbye!\n");
                 break;
             default:

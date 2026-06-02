@@ -101,3 +101,15 @@
      STATUS: OPEN | SEVERITY: HIGH
      ACTION REQUIRED: Check routing or physical connectivity for Asset ID 4.
    ----------------------------------------------------------------------
+[02/06/2026 20:09:41] TEST - Asset ID: 1 | IP: 127.0.0.1 | RESULT: UP (Responded)
+[02/06/2026 20:09:42] TEST - Asset ID: 2 | IP: 127.0.0.1 | RESULT: UP (Responded)
+[02/06/2026 20:09:51] TEST - Asset ID: 3 | IP: 192.168.254.254 | RESULT: DOWN (No Response)
+   ↳ [CRITICAL INCIDENT #INC-5001]
+     STATUS: OPEN | SEVERITY: HIGH
+     ACTION REQUIRED: Check routing or physical connectivity for Asset ID 3.
+   ----------------------------------------------------------------------
+[02/06/2026 20:10:00] TEST - Asset ID: 4 | IP: 10.255.255.1 | RESULT: DOWN (No Response)
+   ↳ [CRITICAL INCIDENT #INC-5002]
+     STATUS: OPEN | SEVERITY: HIGH
+     ACTION REQUIRED: Check routing or physical connectivity for Asset ID 4.
+   ----------------------------------------------------------------------
