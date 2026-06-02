@@ -1,9 +1,9 @@
 Processed Sensor: codigo_sensor | Value: 0.00 unidaestado | Status: estado
-Processed Sensor: TEMP_RACK | Value: 25.70 C | Status: NORMAL
+Processed Sensor: TEMP_RACK | Value: 26.60 C | Status: NORMAL
 Processed Sensor: HUM_RACK | Value: 60.00 % | Status: NORMAL
-Processed Sensor: UPS_BAT | Value: 90.00 % | Status: NORMAL
+Processed Sensor: UPS_BAT | Value: 94.00 % | Status: NORMAL
 Processed Sensor: UPS_ENERGIA | Value: 1.00 - | Status: NORMAL
-Processed Sensor: FAN_RACK | Value: 2679.00 rpm | Status: NORMAL
+Processed Sensor: FAN_RACK | Value: 2873.00 rpm | Status: NORMAL
 Processed Sensor: DOOR_RACK | Value: 0.00 - | Status: NORMAL
 
 ==================================================

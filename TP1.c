@@ -41,18 +41,7 @@ typedef struct {
     SensorReading* top;
 } SensorStack;
 
-typedef struct SensorIncident {
-    int ticketID;
-    char sensorCode[20];
-    char issueDescription[120];
-    char status[20];
-    struct SensorIncident* next; 
-} SensorIncident;
 
-typedef struct {
-    SensorIncident* front;
-    SensorIncident* rear;
-} IncidentQueue;
 
 void clearScreen() {
     if (currentOS == WINDOWS) {
@@ -64,7 +53,7 @@ void clearScreen() {
 
 typedef struct TechnicalIncident {
     int ticketId;
-    char tragetcode[30];
+    char targetCode[30];
     char type[20];
     char description[100];
     char priority[10];
@@ -1231,19 +1220,20 @@ void pushSensorReading(SensorStack* s, SensorReading data) {
 }
 
 void enqueueSensorIncident(IncidentQueue* q, const char* sensorCode, const char* status) {
-    SensorIncident* newNode = (SensorIncident*)malloc(sizeof(SensorIncident));
-    if (newNode == NULL) {
-        printf("\n[ERROR] Memory allocation failed for incident ticket!\n");
-        return;
-    }
+    TechnicalIncident* newNode = (TechnicalIncident*)malloc(sizeof(TechnicalIncident));
+    if (newNode == NULL) return;
     
     static int ticketCounter = 7001; 
+    newNode->ticketId = ticketCounter++;
     
-    newNode->ticketID = ticketCounter++;
-    strcpy(newNode->sensorCode, sensorCode);
+    strcpy(newNode->targetCode, sensorCode);
+    strcpy(newNode->type, "SENSOR_ANOMALY");
+    sprintf(newNode->description, "Automated alert triggered. Sensor status: %s", status);
+    strcpy(newNode->priority, "MEDIUM");
+    strcpy(newNode->technician, "Automation Bot");
     
-    sprintf(newNode->issueDescription, "CRITICAL: Sensor %s triggered automated alert. Ingested status: %s", sensorCode, status);
-    strcpy(newNode->status, "OPEN");
+    getCurrentDateTime(newNode->timestamp);
+    strcpy(newNode->status, "Pending");
     newNode->next = NULL;
 
     if (q->rear == NULL) { 
@@ -1526,31 +1516,32 @@ void displayAnomalousReadings(SensorStack* s) {
 }
 
 void displayPendingIncidents(IncidentQueue* q) {
-    if (q->front == NULL) {
+    if (q == NULL || q->front == NULL) {
         printf("\n=========================================================================");
         printf("\n                      INCIDENT MANAGEMENT QUEUE                          ");
         printf("\n=========================================================================");
-        printf("\n[SUCCESS] Excellent! No pending technical incidents in the queue.");
+        printf("\n[SUCCESS] No pending technical incidents in the queue.");
         printf("\n=========================================================================\n");
         return;
     }
 
-    printf("\n=========================================================================");
-    printf("\n                    ACTIVE TECHNICAL INCIDENTS (FIFO)                    ");
-    printf("\n=========================================================================");
-    printf("\n%-10s %-15s %-10s %-45s", "TICKET ID", "SENSOR CODE", "STATUS", "DESCRIPTION");
-    printf("\n-------------------------------------------------------------------------");
+    printf("\n=================================================================================================================");
+    printf("\n                                         ACTIVE TECHNICAL INCIDENTS (FIFO)                                       ");
+    printf("\n=================================================================================================================");
+    printf("\n%-10s %-15s %-15s %-12s %-10s %-20s", "TICKET ID", "TARGET/ASSET", "TYPE", "PRIORITY", "STATUS", "TIMESTAMP");
+    printf("\n-----------------------------------------------------------------------------------------------------------------");
 
-    SensorIncident* current = q->front;
+    TechnicalIncident* current = q->front;
     while (current != NULL) {
-        printf("\n%-10d %-15s %-10s %-45s", current->ticketID, current->sensorCode, current->status, current->issueDescription);
+        printf("\n#%-9d %-15s %-15s %-12s %-10s %-20s", 
+               current->ticketId, current->targetCode, current->type, current->priority, current->status, current->timestamp);
+        printf("\n  --> Description: %s", current->description);
+        printf("\n  --> Assigned to: %s", current->technician);
+        printf("\n-----------------------------------------------------------------------------------------------------------------");
         current = current->next;
     }
-
-    printf("\n=========================================================================");
-    printf("\n[INFO] Technical support must resolve tickets in the order displayed (FIFO).\n");
-    printf("=========================================================================\n");
-}
+    printf("\n=================================================================================================================\n");
+}    
 
 void menuSensors(SensorStack* stack, IncidentQueue* queue) {
     int option = -1;
@@ -1599,7 +1590,95 @@ void menuSensors(SensorStack* stack, IncidentQueue* queue) {
     } while (option != 0);
 }
 
-void menuIncidents(IncidentQueue* queue) {
+int validateAssetExistence(Node* invHead, SensorStack* s, const char* userInput, char* foundCode) {
+    Node* currentEq = invHead;
+    while (currentEq != NULL) {
+        if (strcmp(currentEq->data.name, userInput) == 0 || 
+            strcmp(currentEq->data.ip, userInput) == 0) {
+            strcpy(foundCode, currentEq->data.name);
+        }
+        currentEq = currentEq->next;
+    }
+
+    if (s != NULL && s->top != NULL) {
+        SensorReading* currentSensor = s->top;
+        while (currentSensor != NULL) {
+            if (strcmp(currentSensor->code, userInput) == 0 || 
+                strcmp(currentSensor->type, userInput) == 0) {
+                strcpy(foundCode, currentSensor->code);
+                return 1;
+            }
+            currentSensor = currentSensor->next;
+        }
+    }
+
+    return 0;
+}
+
+void createManualIncident(IncidentQueue* q, Node* invHead, SensorStack* s) {
+    char userInput[50];
+    char officialCode[30];
+    
+    printf("\n=========================================");
+    printf("\n        MANUAL INCIDENT REGISTRATION     ");
+    printf("\n=========================================");
+    
+    printf("\nEnter Equipment/Sensor (Name, Code or IP): ");
+    fgets(userInput, sizeof(userInput), stdin);
+    userInput[strcspn(userInput, "\n")] = 0; // Remove o \n
+
+    if (!validateAssetExistence(invHead, s, userInput, officialCode)) {
+        printf("\n[ERROR] Asset '%s' could not be found by Name, Code or IP!", userInput);
+        printf("\nTicket creation aborted. Please enter a valid registered asset.\n");
+        printf("=========================================\n");
+        return;
+    }
+
+    TechnicalIncident* newNode = (TechnicalIncident*)malloc(sizeof(TechnicalIncident));
+    if (newNode == NULL) {
+        printf("\n[ERROR] System memory allocation failure.\n");
+        return;
+    }
+
+    static int seqCounter = 8001;
+    newNode->ticketId = seqCounter++;
+    
+    strcpy(newNode->targetCode, officialCode);
+    strcpy(newNode->type, "MANUAL");
+
+    printf("Issue Description: ");
+    fgets(newNode->description, sizeof(newNode->description), stdin);
+    newNode->description[strcspn(newNode->description, "\n")] = 0;
+
+    int pChoice = 3;
+    printf("Priority Level (1 - High, 2 - Medium, 3 - Low): ");
+    if (scanf("%d", &pChoice) != 1) pChoice = 3;
+    while (getchar() != '\n');
+
+    if (pChoice == 1) strcpy(newNode->priority, "HIGH");
+    else if (pChoice == 2) strcpy(newNode->priority, "MEDIUM");
+    else strcpy(newNode->priority, "LOW");
+
+    printf("Assigned Technician: ");
+    fgets(newNode->technician, sizeof(newNode->technician), stdin);
+    newNode->technician[strcspn(newNode->technician, "\n")] = 0;
+
+    getCurrentDateTime(newNode->timestamp);
+    strcpy(newNode->status, "Pending");
+    newNode->next = NULL;
+
+    if (q->rear == NULL) {
+        q->front = q->rear = newNode;
+    } else {
+        q->rear->next = newNode;
+        q->rear = newNode;
+    }
+
+    printf("\n[SUCCESS] Ticket #%d pushed to the technical queue successfully!\n", newNode->ticketId);
+    printf("=========================================\n");
+}
+
+void menuIncidents(IncidentQueue* queue, Node* invHead, SensorStack* sensorStack) {
     int option = -1;
 
     do {
@@ -1620,7 +1699,7 @@ void menuIncidents(IncidentQueue* queue) {
         switch (option) {
             case 1:
                 clearScreen();
-                createManualIncident(queue);
+                createManualIncident(queue, invHead, sensorStack);
                 break;
             case 0:
                 printf("\nReturning to Main Menu");
@@ -1629,12 +1708,9 @@ void menuIncidents(IncidentQueue* queue) {
                 printf("Invalid option. Please try again.\n");
         }
 
-    } while (option != 0);
-    {
-        /* code */
-    }
-    
+    } while (option != 0);  
 }
+
 int main() {
     Node* equipmentList = NULL;
     equipmentList = loadInventoryFromBinary(equipmentList);
@@ -1697,7 +1773,8 @@ int main() {
                 break;
             case 4:
                 clearScreen();
-                menuIncidents
+                menuIncidents(&incidentQueue, equipmentList, &sensorStack);
+                break;
             case 0:
                 clearScreen();
                 printf("\nSaving session data to backup file...\n"); 
