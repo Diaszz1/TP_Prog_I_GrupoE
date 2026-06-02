@@ -1041,12 +1041,40 @@ void writeToMonitorizationLog(int assetID, const char* ip, int success) {
     fclose(logFile);
 }
 
-void createAutomaticIncident(int assetID, const char* assetName) {
-    printf("[INCIDENT] -> Generating automatic ticket for Asset ID %d (%s)!\n", assetID, assetName);
-    printf("[INCIDENT] -> Ticket successfully routed to the technical service queue.\n");
+void enqueuePingFailureIncident(IncidentQueue* q, const char* failedIP, const char* deviceName) {
+    TechnicalIncident* newNode = (TechnicalIncident*)malloc(sizeof(TechnicalIncident));
+    if (newNode == NULL) return;
+
+    static int netCounter = 2001;
+    newNode->ticketId = netCounter++;
+
+    if (deviceName != NULL && strlen(deviceName) > 0) {
+        strcpy(newNode->targetCode, deviceName);
+    } else {
+        strcpy(newNode->targetCode, failedIP);
+    }
+
+    strcpy(newNode->type, "PING_FAILURE");
+    sprintf(newNode->description, "CRITICAL: Device unreachable. ICMP echo request timed out for IP %s.", failedIP);
+    strcpy(newNode->priority, "HIGH"); // Falhas de rede gerais no NOC são críticas
+    strcpy(newNode->technician, "Network Operations Center");
+    
+    getCurrentDateTime(newNode->timestamp);
+    strcpy(newNode->status, "Pending");
+    newNode->next = NULL;
+
+    if (q->rear == NULL) {
+        q->front = q->rear = newNode;
+    } else {
+        q->rear->next = newNode;
+        q->rear = newNode;
+    }
+    
+    printf("\n[AUTOMATED ALERT] Created Incident Ticket #%d for offline equipment: %s\n", 
+           newNode->ticketId, newNode->targetCode);
 }
 
-PingResult processAssetPing(Node* target) {
+PingResult processAssetPing(Node* target, IncidentQueue* q) {
     PingResult result;
     result.responded = 0;
 
@@ -1090,7 +1118,7 @@ PingResult processAssetPing(Node* target) {
         strcpy(target->data.status, "Faulty");
         printf("CRITICAL: Asset ID %d failed to respond! Status updated to: Faulty.\n", target->data.id);
 
-        createAutomaticIncident(target->data.id, target->data.name);
+        enqueuePingFailureIncident(q, target->data.ip, target->data.name);
     }
 
     writeToMonitorizationLog(target->data.id, target->data.ip, result.responded);
@@ -1098,7 +1126,7 @@ PingResult processAssetPing(Node* target) {
     return result;
 }
 
-void runGeneralNetworkTest(Node* list) {
+void runGeneralNetworkTest(Node* list, IncidentQueue* q) {
     if (list ==NULL) {
         printf("\nThe inventory is empty. No assets available for testing.\n");
         return;
@@ -1114,7 +1142,7 @@ void runGeneralNetworkTest(Node* list) {
 
     while (current != NULL) {
         totalTested++;
-        PingResult r = processAssetPing(current);
+        PingResult r = processAssetPing(current, q);
         if (r.responded) {
             onlineAssets++;
         }
@@ -1336,7 +1364,7 @@ int fetchSensorDataFromAPI() {
     }
 }
 
-void menuConnectivity(Node* list) {
+void menuConnectivity(Node* list, IncidentQueue* q) {
     int option;
     do {
         printf("\n=========================================");
@@ -1379,7 +1407,7 @@ void menuConnectivity(Node* list) {
                     }
 
                     if (current != NULL) {
-                        processAssetPing(current);
+                        processAssetPing(current, q);
                     } else {
                         printf("\n>>> No equipment found with ID %d.\n", searchId);
                     }
@@ -1388,7 +1416,7 @@ void menuConnectivity(Node* list) {
             }
             case 2:
                 clearScreen();
-                runGeneralNetworkTest(list);
+                runGeneralNetworkTest(list, q);
                 break;
             case 3:
                 clearScreen();
@@ -1763,7 +1791,7 @@ int main() {
                 break;
             case 2:
                 clearScreen();
-                menuConnectivity(equipmentList);
+                menuConnectivity(equipmentList, &incidentQueue);
                 clearScreen();
                 break;
             case 3:
