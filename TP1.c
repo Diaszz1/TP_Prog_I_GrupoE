@@ -58,6 +58,7 @@ typedef struct TechnicalIncident {
     char description[100];
     char priority[10];
     char timestamp[20];
+    char closedtimestamp[20];
     char technician[40];
     char status[15];
     struct TechnicalIncident* next;
@@ -70,8 +71,10 @@ typedef struct {
 
 void getCurrentDateTime(char* buffer) {
     time_t t = time(NULL);
-    struct tm* tm_info = localtime(&t);
-    strftime(buffer, 20, "%d-%m-%Y %H:%M", tm_info);
+    struct tm tm = *localtime(&t);
+    sprintf(buffer, "%02d/%02d/%04d %02d:%02d", 
+            tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900, 
+            tm.tm_hour, tm.tm_min);
 }
 
 OS_TYPE detectOperatingSystem() {
@@ -1571,10 +1574,15 @@ void displayPendingIncidents(IncidentQueue* q) {
 
     TechnicalIncident* current = q->front;
     while (current != NULL) {
-        printf("\n#%-9d %-15s %-15s %-12s %-10s %-20s", 
-               current->ticketId, current->targetCode, current->type, current->priority, current->status, current->timestamp);
-        printf("\n  --> Description: %s", current->description);
-        printf("\n  --> Assigned to: %s", current->technician);
+        printf("\n#%-9d %-15s %-15s %-12s [%-13s] %-18s", 
+               current->ticketId, 
+               current->targetCode, 
+               current->type, 
+               current->priority, 
+               current->status, 
+               current->timestamp);
+               
+        printf("\n  --> Description: %s | Assigned Tech: %s", current->description, current->technician);
         printf("\n-----------------------------------------------------------------------------------------------------------------");
         current = current->next;
     }
@@ -1650,9 +1658,7 @@ int validateAssetExistence(Node* invHead, SensorStack* s, const char* userInput,
             strcmp(currEquip->data.ip, cleanInput) == 0 || 
             strcmp(idStr, cleanInput) == 0) {
             
-            if (foundCode != NULL) {
-                strcpy(foundCode, currEquip->data.name);
-            }
+            if (foundCode != NULL) strcpy(foundCode, currEquip->data.name);
             return 1;
         }
         currEquip = currEquip->next;
@@ -1676,54 +1682,46 @@ int validateAssetExistence(Node* invHead, SensorStack* s, const char* userInput,
 
 void createManualIncident(IncidentQueue* q, Node* invHead, SensorStack* s) {
     char userInput[50];
-    char officialCode[30];
-    
-    printf("\n=========================================");
-    printf("\n        MANUAL INCIDENT REGISTRATION     ");
-    printf("\n=========================================");
-    
-    printf("\nEnter Equipment/Sensor (Name, Code or IP): ");
-    fgets(userInput, sizeof(userInput), stdin);
-    userInput[strcspn(userInput, "\n")] = 0; // Remove o \n
+    char finalAssetCode[30];
 
-    if (!validateAssetExistence(invHead, s, userInput, officialCode)) {
-        printf("\n[ERROR] Asset '%s' could not be found by Name, Code or IP!", userInput);
-        printf("\nTicket creation aborted. Please enter a valid registered asset.\n");
-        printf("=========================================\n");
+    printf("\n=== REGISTER MANUAL INCIDENT ===\n");
+    printf("Enter the Name, IP or Code of the Equipment/Sensor: ");
+    fgets(userInput, sizeof(userInput), stdin);
+    userInput[strcspn(userInput, "\n")] = 0;
+
+    if (!validateAssetExistence(invHead, s, userInput, finalAssetCode)) {
+        printf("\n\033[1;31m[ERROR] Asset or Sensor '%s' does not exist in the system!\033[0m\n", userInput);
         return;
     }
 
     TechnicalIncident* newNode = (TechnicalIncident*)malloc(sizeof(TechnicalIncident));
-    if (newNode == NULL) {
-        printf("\n[ERROR] System memory allocation failure.\n");
-        return;
-    }
+    if (newNode == NULL) return;
 
-    static int seqCounter = 8001;
-    newNode->ticketId = seqCounter++;
-    
-    strcpy(newNode->targetCode, officialCode);
-    strcpy(newNode->type, "MANUAL");
+    static int manualCounter = 1001;
+    newNode->ticketId = manualCounter++;
+    strcpy(newNode->targetCode, finalAssetCode);
 
-    printf("Issue Description: ");
+    printf("Incident Type (e.g., REPAIR, CONFIG): ");
+    fgets(newNode->type, sizeof(newNode->type), stdin);
+    newNode->type[strcspn(newNode->type, "\n")] = 0;
+
+    printf("Problem Description: ");
     fgets(newNode->description, sizeof(newNode->description), stdin);
     newNode->description[strcspn(newNode->description, "\n")] = 0;
 
-    int pChoice = 3;
-    printf("Priority Level (1 - High, 2 - Medium, 3 - Low): ");
-    if (scanf("%d", &pChoice) != 1) pChoice = 3;
+    int pOption;
+    printf("Priority (1-HIGH, 2-MEDIUM, 3-LOW): ");
+    if (scanf("%d", &pOption) != 1) pOption = 3;
     while (getchar() != '\n');
 
-    if (pChoice == 1) strcpy(newNode->priority, "HIGH");
-    else if (pChoice == 2) strcpy(newNode->priority, "MEDIUM");
+    if (pOption == 1) strcpy(newNode->priority, "HIGH");
+    else if (pOption == 2) strcpy(newNode->priority, "MEDIUM");
     else strcpy(newNode->priority, "LOW");
 
-    printf("Assigned Technician: ");
-    fgets(newNode->technician, sizeof(newNode->technician), stdin);
-    newNode->technician[strcspn(newNode->technician, "\n")] = 0;
-
-    getCurrentDateTime(newNode->timestamp);
+    strcpy(newNode->technician, "Not Assigned");
     strcpy(newNode->status, "Pending");
+    getCurrentDateTime(newNode->timestamp);
+    newNode->closedtimestamp[0] = '\0';
     newNode->next = NULL;
 
     if (q->rear == NULL) {
@@ -1732,9 +1730,7 @@ void createManualIncident(IncidentQueue* q, Node* invHead, SensorStack* s) {
         q->rear->next = newNode;
         q->rear = newNode;
     }
-
-    printf("\n[SUCCESS] Ticket #%d pushed to the technical queue successfully!\n", newNode->ticketId);
-    printf("=========================================\n");
+    printf("\n\033[1;32m[SUCCESS] Ticket Manual #%d created for the asset: %s!\033[0m\n", newNode->ticketId, newNode->targetCode);
 }
 
 void displayIncidentByStatus(IncidentQueue* q, const char* targetStatus, const char* title) {
@@ -1845,7 +1841,34 @@ void displayIncidentsByPriority(IncidentQueue* q) {
     printf("\n=================================================================================================================\n");
 }
 
-void menuIncidentReports(IncidentQueue* q) {
+void displayCompletedHistory(TechnicalIncident* historyHead) {
+    if (historyHead == NULL) {
+        printf("\n=========================================================================");
+        printf("\n                      HISTORIC - COMPLETED INCIDENTS                     ");
+        printf("\n=========================================================================");
+        printf("\n[INFO] No completed incidents in the history.");
+        printf("\n=========================================================================\n");
+        return;
+    }
+
+    printf("\n=================================================================================================================");
+    printf("\n                                         HISTORIC - COMPLETED INCIDENTS                                         ");
+    printf("\n=================================================================================================================");
+    printf("\n%-10s %-15s %-15s %-18s %-18s %-10s", "TICKET ID", "TARGET/ASSET", "TYPE", "OPENED AT", "CLOSED AT", "TECHNICIAN");
+    printf("\n-----------------------------------------------------------------------------------------------------------------");
+
+    TechnicalIncident* current = historyHead;
+    while (current != NULL) {
+        printf("\n#%-9d %-15s %-15s %-18s %-18s %-10s", 
+               current->ticketId, current->targetCode, current->type, current->timestamp, current->closedtimestamp, current->technician);
+        printf("\n  --> %s", current->description);
+        printf("\n-----------------------------------------------------------------------------------------------------------------");
+        current = current->next;
+    }
+    printf("\n=================================================================================================================\n");
+}
+
+void menuIncidentReports(IncidentQueue* q, TechnicalIncident** historyHead) {
     int option = -1;
     do {
         printf("\n=========================================");
@@ -1877,7 +1900,7 @@ void menuIncidentReports(IncidentQueue* q) {
                 break;
             case 3:
                 clearScreen();
-                displayIncidentByStatus(q, "Completed", "COMPLETED INCIDENTS");
+                displayCompletedHistory(*historyHead);
                 break;
             case 4:
                 clearScreen();
@@ -1899,12 +1922,12 @@ void menuIncidentReports(IncidentQueue* q) {
     } while (option != 0);
 }
 
-void processNextIncident(IncidentQueue* q, Node* invHead) {
+void processNextIncident(IncidentQueue* q, Node* invHead, TechnicalIncident** historyHead) {
     if (q == NULL || q->front == NULL) {
         printf("\n=========================================================================");
         printf("\n                    RESOLUTION & INCIDENT PROCESSING                     ");
         printf("\n=========================================================================");
-        printf("\n[INFO] No pending incidents to process.");
+        printf("\n[INFO] No incidents in the queue.");
         printf("\n=========================================================================\n");
         return;
     }
@@ -1915,80 +1938,91 @@ void processNextIncident(IncidentQueue* q, Node* invHead) {
     printf("\n                 INCIDENT PROCESSING (FIFO)                        ");
     printf("\n=========================================================================");
     printf("\n  TICKET ID:    #%d", activeTicket->ticketId);
-    printf("\n  Asset:   %s", activeTicket->targetCode);
-    printf("\n  Alert Type:  %s", activeTicket->type);
+    printf("\n  Target/Asset: %s", activeTicket->targetCode);
+    printf("\n  Alert Type:   %s", activeTicket->type);
     printf("\n  Current Status: [%s]", activeTicket->status);
-    printf("\n  Priority:   %s", activeTicket->priority);
-    printf("\n  Description:    %s", activeTicket->description);
+    printf("\n  Priority:     %s", activeTicket->priority);
+    printf("\n  Description:  %s", activeTicket->description);
     printf("\n=========================================================================");
 
     int choice = -1;
     
     if (strcmp(activeTicket->status, "Pending") == 0) {
         printf("\nThe next incident in the queue is PENDING.");
-        printf("\n  1. Set Incident to IN PROGRESS (Start Handling)");
-        printf("\n  0. Exit without making changes");
+        printf("\n  1. Set incident to IN PROGRESS (Start Handling)");
+        printf("\n  0. Exit without changes");
         printf("\nChoose an option: ");
+        fflush(stdout);
+
         if (scanf("%d", &choice) != 1) { while (getchar() != '\n'); return; }
         while (getchar() != '\n');
 
         if (choice == 1) {
-            printf("Insert the technician's name: ");
+            printf("Insert the technician name: ");
             fgets(activeTicket->technician, sizeof(activeTicket->technician), stdin);
             activeTicket->technician[strcspn(activeTicket->technician, "\n")] = 0;
 
             strcpy(activeTicket->status, "In Progress");
-            printf("\n>>> [SUCCESS] Ticket #%d is now in progress.\n", activeTicket->ticketId);
+            printf("\n>>> [SUCCESS] Ticket #%d is now 'In Progress'.\n", activeTicket->ticketId);
         }
     } 
     else if (strcmp(activeTicket->status, "In Progress") == 0) {
         printf("\nThe next incident in the queue is IN PROGRESS.");
-        printf("\n  1. RESOLVE INCIDENT (Mark as Completed and Close Ticket)");
-        printf("\n  0. Exit without making changes");
+        printf("\n  1. RESOLVE INCIDENT (Move to Completed History)");
+        printf("\n  0. Exit without changes");
         printf("\nChoose an option: ");
+        fflush(stdout);
+
         if (scanf("%d", &choice) != 1) { while (getchar() != '\n'); return; }
         while (getchar() != '\n');
 
         if (choice == 1) {
             char solution[100];
-            printf("Describe briefly the technical solution applied: ");
+            printf("Briefly describe the technical solution applied: ");
+            fflush(stdout);
             fgets(solution, sizeof(solution), stdin);
             solution[strcspn(solution, "\n")] = 0;
 
             char finalDesc[120];
-            sprintf(finalDesc, "%s (SOLUTION: %s)", activeTicket->description, solution);
+            sprintf(finalDesc, "%s (SOLUCION: %s)", activeTicket->description, solution);
             strncpy(activeTicket->description, finalDesc, sizeof(activeTicket->description) - 1);
 
-            printf("\n>>> [SUCCESS] Ticket #%d resolved successfully!", activeTicket->ticketId);
+            strcpy(activeTicket->status, "Completed");
+            
+            getCurrentDateTime(activeTicket->closedtimestamp); 
+
+            char savedTime[20];
+            strcpy(savedTime, activeTicket->closedtimestamp);
 
             Node* currEquip = invHead;
             while (currEquip != NULL) {
                 if (strcmp(currEquip->data.name, activeTicket->targetCode) == 0) {
                     strcpy(currEquip->data.status, "Operational");
-                    printf("\n[NOC] Status of equipment '%s' reset to 'Operational'.", currEquip->data.name);
                     break;
                 }
                 currEquip = currEquip->next;
             }
 
             q->front = q->front->next;
-         
             if (q->front == NULL) {
                 q->rear = NULL;
             }
 
-            free(activeTicket);
-            printf("\n[FIFO] Ticket removed from the handling queue.\n");
+            activeTicket->next = *historyHead;
+            *historyHead = activeTicket;
+
+            printf("\n>>> [SUCCESS] Ticket #%d closed and archived in the Completed History at %s!\n", 
+                   activeTicket->ticketId, savedTime);
         }
     }
 }
 
-void menuIncidents(IncidentQueue* queue, Node* invHead, SensorStack* sensorStack) {
+void menuIncidents(IncidentQueue* queue, Node* invHead, SensorStack* sensorStack, TechnicalIncident** historyHead) {
     int option = -1;
 
     do {
         printf("\n=========================================");
-        printf("\n     MODULO 4 - INCIDENT MANAGEMENT     ");
+        printf("\n      INCIDENT MANAGEMENT     ");
         printf("\n=========================================");
         printf("\n  1. Log new Incident Manually");
         printf("\n  2. Process Next Incident in Queue");
@@ -2010,11 +2044,11 @@ void menuIncidents(IncidentQueue* queue, Node* invHead, SensorStack* sensorStack
                 break;
             case 2:
                 clearScreen();
-                processNextIncident(queue, invHead);
+                processNextIncident(queue, invHead, historyHead);
                 break;
             case 3:
                 clearScreen();
-                menuIncidentReports(queue);
+                menuIncidentReports(queue, historyHead);
                 break;
             case 0:
                 printf("\nReturning to Main Menu");
@@ -2091,6 +2125,7 @@ int main() {
 
     SensorStack sensorStack;
     IncidentQueue incidentQueue;
+    TechnicalIncident* completedHistory = NULL;
     initSensorStack(&sensorStack);
     
     incidentQueue.front = NULL;
@@ -2142,7 +2177,7 @@ int main() {
                 break;
             case 4:
                 clearScreen();
-                menuIncidents(&incidentQueue, equipmentList, &sensorStack);
+                menuIncidents(&incidentQueue, equipmentList, &sensorStack, &completedHistory);
                 break;
             case 0:
                 clearScreen();
