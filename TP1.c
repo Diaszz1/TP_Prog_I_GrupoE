@@ -1056,7 +1056,7 @@ void enqueuePingFailureIncident(IncidentQueue* q, const char* failedIP, const ch
 
     strcpy(newNode->type, "PING_FAILURE");
     sprintf(newNode->description, "CRITICAL: Device unreachable. ICMP echo request timed out for IP %s.", failedIP);
-    strcpy(newNode->priority, "HIGH"); // Falhas de rede gerais no NOC são críticas
+    strcpy(newNode->priority, "HIGH");
     strcpy(newNode->technician, "Network Operations Center");
     
     getCurrentDateTime(newNode->timestamp);
@@ -1750,6 +1750,168 @@ void dequeueAndProcessIncident(IncidentQueue* q) {
     free(temp);
 }
 
+void displayIncidentByStatus(IncidentQueue* q, const char* targetStatus, const char* title) {
+    if (q == NULL || q->front == NULL) {
+        printf("\n=========================================================================");
+        printf("\n                      %s                          ", title);
+        printf("\n=========================================================================");
+        printf("\n[INFO] No incidents found.");
+        printf("\n=========================================================================\n");
+        return;
+    }
+
+    int count = 0;
+    printf("\n=========================================================================");
+    printf("\n                                         %s                                       ", title);
+    printf("\n=========================================================================");
+    printf("\n%-10s %-15s %-15s %-12s %-10s %-20s", "TICKET ID", "TARGET/ASSET", "TYPE", "PRIORITY", "STATUS", "TIMESTAMP");
+    printf("\n-----------------------------------------------------------------------------------------------------------------");
+
+    TechnicalIncident* current = q->front;
+    while (current != NULL) {
+        if (strcmp(current->status, targetStatus) == 0) {
+            printf("\n#%-9d %-15s %-15s %-12s %-10s %-20s", 
+                   current->ticketId, current->targetCode, current->type, current->priority, current->status, current->timestamp);
+            printf("\n  --> Description: %s", current->description);
+            printf("\n  --> Assigned to: %s", current->technician);
+            printf("\n-----------------------------------------------------------------------------------------------------------------");
+            count++;
+        }
+        current = current->next;
+    }
+
+    if (count == 0) {
+        printf("\n[INFO] No incidents with status '%s' found.\n", targetStatus);
+    }
+    printf("\n=========================================================================\n");
+}   
+
+void displayIncidentsByAsset(IncidentQueue* q) {
+    if (q == NULL || q->front == NULL) {
+        printf("\n[INFO] No incidents in the queue.\n");
+        return;
+    }
+
+    char targetInput[30];
+    printf("\nInsert Asset Name, Code or IP: ");
+    fgets(targetInput, sizeof(targetInput), stdin);
+    targetInput[strcspn(targetInput, "\n")] = 0;
+
+    printf("\n=================================================================================================================");
+    printf("\n                                   INCIDENTS FOR ASSET: %s", targetInput);
+    printf("\n=================================================================================================================");
+    
+    int count = 0;
+    TechnicalIncident* current = q->front;
+    while (current != NULL) {
+        if (strcmp(current->targetCode, targetInput) == 0) {
+            printf("\n#%-9d %-15s %-15s %-12s %-10s %-20s", 
+                   current->ticketId, current->targetCode, current->type, current->priority, current->status, current->timestamp);
+            printf("\n  --> Description: %s", current->description);
+            printf("\n-----------------------------------------------------------------------------------------------------------------");
+            count++;
+        }
+        current = current->next;
+    }
+
+    if (count == 0) {
+        printf("\n[INFO] No incidents found for the specified asset.");
+    }
+    printf("\n=================================================================================================================\n");
+}
+
+void displayIncidentsByPriority(IncidentQueue* q) {
+    if (q == NULL || q->front == NULL) {
+        printf("\n[INFO] No incidents in the queue.\n");
+        return;
+    }
+
+    int choice;
+    char targetPriority[10] = "LOW";
+    printf("\nSelect Priority to filter:\n1. HIGH\n2. MEDIUM\n3. LOW\nChoice: ");
+    if (scanf("%d", &choice) != 1) choice = 3;
+    while (getchar() != '\n');
+
+    if (choice == 1) strcpy(targetPriority, "HIGH");
+    else if (choice == 2) strcpy(targetPriority, "MEDIUM");
+
+    printf("\n=================================================================================================================");
+    printf("\n                                   INCIDENTS WITH PRIORITY: %s", targetPriority);
+    printf("\n=================================================================================================================");
+
+    int count = 0;
+    TechnicalIncident* current = q->front;
+    while (current != NULL) {
+        if (strcmp(current->priority, targetPriority) == 0) {
+            printf("\n#%-9d %-15s %-15s %-12s %-10s %-20s", 
+                   current->ticketId, current->targetCode, current->type, current->priority, current->status, current->timestamp);
+            printf("\n  --> Description: %s", current->description);
+            printf("\n-----------------------------------------------------------------------------------------------------------------");
+            count++;
+        }
+        current = current->next;
+    }
+
+    if (count == 0) {
+        printf("\n[INFO] No incidents found with priority: %s", targetPriority);
+    }
+    printf("\n=================================================================================================================\n");
+}
+
+void menuIncidentReports(IncidentQueue* q) {
+    int option = -1;
+    do {
+        printf("\n=========================================");
+        printf("\n      SUBMENU - REPORTS & QUERIES        ");
+        printf("\n=========================================");
+        printf("\n  1. List All Pending Incidents");
+        printf("\n  2. List All In Progress Incidents");
+        printf("\n  3. List All Completed Incidents");
+        printf("\n  4. Search Incidents by Asset");
+        printf("\n  5. Search Incidents by Priority");
+        printf("\n  0. Back to Incident Menu");
+        printf("\n=========================================");
+        printf("\nSelect an option: ");
+
+        if (scanf("%d", &option) != 1) {
+            while (getchar() != '\n');
+            continue;
+        }
+        while (getchar() != '\n');
+
+        switch (option) {
+            case 1:
+                clearScreen();
+                displayIncidentByStatus(q, "Pending", "PENDING INCIDENTS");
+                break;
+            case 2:
+                clearScreen();
+                displayIncidentByStatus(q, "In Progress", "IN PROGRESS INCIDENTS");
+                break;
+            case 3:
+                clearScreen();
+                displayIncidentByStatus(q, "Completed", "COMPLETED INCIDENTS");
+                break;
+            case 4:
+                clearScreen();
+                displayIncidentsByAsset(q);
+                break;
+            case 5:
+                clearScreen();
+                displayIncidentsByPriority(q);
+                break;
+            case 0:
+                clearScreen();
+                printf("\nReturning to Incident Menu...\n");
+                break;
+            default:
+                clearScreen();
+                printf("\nInvalid option. Please try again.\n");
+                break;
+        }
+    } while (option != 0);
+}
+
 void menuIncidents(IncidentQueue* queue, Node* invHead, SensorStack* sensorStack) {
     int option = -1;
 
@@ -1759,6 +1921,7 @@ void menuIncidents(IncidentQueue* queue, Node* invHead, SensorStack* sensorStack
         printf("\n=========================================");
         printf("\n  1. Log new Incident Manually");
         printf("\n  2. Run Automated Despatch");
+        printf("\n  3. View Incident Reports");
         printf("\n  0. Return to Main Menu");
         printf("\n=========================================");
         printf("\nSelect an option: ");
@@ -1777,6 +1940,10 @@ void menuIncidents(IncidentQueue* queue, Node* invHead, SensorStack* sensorStack
             case 2:
                 clearScreen();
                 dequeueAndProcessIncident(queue);
+                break;
+            case 3:
+                clearScreen();
+                menuIncidentReports(queue);
                 break;
             case 0:
                 printf("\nReturning to Main Menu");

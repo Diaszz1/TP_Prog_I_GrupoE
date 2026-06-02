@@ -65,3 +65,39 @@
      STATUS: OPEN | SEVERITY: HIGH
      ACTION REQUIRED: Check routing or physical connectivity for Asset ID 4.
    ----------------------------------------------------------------------
+[02/06/2026 19:25:53] TEST - Asset ID: 1 | IP: 127.0.0.1 | RESULT: UP (Responded)
+[02/06/2026 19:25:54] TEST - Asset ID: 2 | IP: 127.0.0.1 | RESULT: UP (Responded)
+[02/06/2026 19:26:03] TEST - Asset ID: 3 | IP: 192.168.254.254 | RESULT: DOWN (No Response)
+   ↳ [CRITICAL INCIDENT #INC-5001]
+     STATUS: OPEN | SEVERITY: HIGH
+     ACTION REQUIRED: Check routing or physical connectivity for Asset ID 3.
+   ----------------------------------------------------------------------
+[02/06/2026 19:26:12] TEST - Asset ID: 4 | IP: 10.255.255.1 | RESULT: DOWN (No Response)
+   ↳ [CRITICAL INCIDENT #INC-5002]
+     STATUS: OPEN | SEVERITY: HIGH
+     ACTION REQUIRED: Check routing or physical connectivity for Asset ID 4.
+   ----------------------------------------------------------------------
+[02/06/2026 19:50:22] TEST - Asset ID: 1 | IP: 127.0.0.1 | RESULT: UP (Responded)
+[02/06/2026 19:50:23] TEST - Asset ID: 2 | IP: 127.0.0.1 | RESULT: UP (Responded)
+[02/06/2026 19:50:31] TEST - Asset ID: 3 | IP: 192.168.254.254 | RESULT: DOWN (No Response)
+   ↳ [CRITICAL INCIDENT #INC-5003]
+     STATUS: OPEN | SEVERITY: HIGH
+     ACTION REQUIRED: Check routing or physical connectivity for Asset ID 3.
+   ----------------------------------------------------------------------
+[02/06/2026 19:50:40] TEST - Asset ID: 4 | IP: 10.255.255.1 | RESULT: DOWN (No Response)
+   ↳ [CRITICAL INCIDENT #INC-5004]
+     STATUS: OPEN | SEVERITY: HIGH
+     ACTION REQUIRED: Check routing or physical connectivity for Asset ID 4.
+   ----------------------------------------------------------------------
+[02/06/2026 19:52:31] TEST - Asset ID: 1 | IP: 127.0.0.1 | RESULT: UP (Responded)
+[02/06/2026 19:52:32] TEST - Asset ID: 2 | IP: 127.0.0.1 | RESULT: UP (Responded)
+[02/06/2026 19:52:41] TEST - Asset ID: 3 | IP: 192.168.254.254 | RESULT: DOWN (No Response)
+   ↳ [CRITICAL INCIDENT #INC-5001]
+     STATUS: OPEN | SEVERITY: HIGH
+     ACTION REQUIRED: Check routing or physical connectivity for Asset ID 3.
+   ----------------------------------------------------------------------
+[02/06/2026 19:52:50] TEST - Asset ID: 4 | IP: 10.255.255.1 | RESULT: DOWN (No Response)
+   ↳ [CRITICAL INCIDENT #INC-5002]
+     STATUS: OPEN | SEVERITY: HIGH
+     ACTION REQUIRED: Check routing or physical connectivity for Asset ID 4.
+   ----------------------------------------------------------------------
