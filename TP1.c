@@ -1716,40 +1716,6 @@ void createManualIncident(IncidentQueue* q, Node* invHead, SensorStack* s) {
     printf("=========================================\n");
 }
 
-void dequeueAndProcessIncident(IncidentQueue* q) {
-    if (q == NULL || q->front == NULL) {
-        printf("\n=========================================");
-        printf("\n          INCIDENT DESPATCH CENTER       ");
-        printf("\n=========================================");
-        printf("\n[INFO] No pending incidents to process.\n");
-        printf("=========================================\n");
-        return;
-    }
-
-    TechnicalIncident* temp = q->front;
-
-    printf("\n=========================================");
-    printf("\n          PROCESSING TICKET #%d          ", temp->ticketId);
-    printf("\n=========================================");
-    printf("\nTarget/Asset:  %s", temp->targetCode);
-    printf("\nAlert Type:    %s", temp->type);
-    printf("\nPriority:      %s", temp->priority);
-    printf("\nDescription:   %s", temp->description);
-    printf("\nLogged Time:   %s", temp->timestamp);
-    printf("\n-----------------------------------------");
-    printf("\n[STATUS] Dispatching technician: %s", temp->technician);
-    printf("\n[SUCCESS] Ticket solved and removed from active queue!");
-    printf("\n=========================================\n");
-
-    q->front = q->front->next;
-
-    if (q->front == NULL) {
-        q->rear = NULL;
-    }
-
-    free(temp);
-}
-
 void displayIncidentByStatus(IncidentQueue* q, const char* targetStatus, const char* title) {
     if (q == NULL || q->front == NULL) {
         printf("\n=========================================================================");
@@ -1912,6 +1878,90 @@ void menuIncidentReports(IncidentQueue* q) {
     } while (option != 0);
 }
 
+void processNextIncident(IncidentQueue* q, Node* invHead) {
+    if (q == NULL || q->front == NULL) {
+        printf("\n=========================================================================");
+        printf("\n                    RESOLUTION & INCIDENT PROCESSING                     ");
+        printf("\n=========================================================================");
+        printf("\n[INFO] No pending incidents to process.");
+        printf("\n=========================================================================\n");
+        return;
+    }
+
+    TechnicalIncident* activeTicket = q->front;
+
+    printf("\n=========================================================================");
+    printf("\n                 INCIDENT PROCESSING (FIFO)                        ");
+    printf("\n=========================================================================");
+    printf("\n  TICKET ID:    #%d", activeTicket->ticketId);
+    printf("\n  Asset:   %s", activeTicket->targetCode);
+    printf("\n  Alert Type:  %s", activeTicket->type);
+    printf("\n  Current Status: [%s]", activeTicket->status);
+    printf("\n  Priority:   %s", activeTicket->priority);
+    printf("\n  Description:    %s", activeTicket->description);
+    printf("\n=========================================================================");
+
+    int choice = -1;
+    
+    if (strcmp(activeTicket->status, "Pending") == 0) {
+        printf("\nThe next incident in the queue is PENDING.");
+        printf("\n  1. Set Incident to IN PROGRESS (Start Handling)");
+        printf("\n  0. Exit without making changes");
+        printf("\nChoose an option: ");
+        if (scanf("%d", &choice) != 1) { while (getchar() != '\n'); return; }
+        while (getchar() != '\n');
+
+        if (choice == 1) {
+            printf("Insert the technician's name: ");
+            fgets(activeTicket->technician, sizeof(activeTicket->technician), stdin);
+            activeTicket->technician[strcspn(activeTicket->technician, "\n")] = 0;
+
+            strcpy(activeTicket->status, "In Progress");
+            printf("\n>>> [SUCCESS] Ticket #%d is now in progress.\n", activeTicket->ticketId);
+        }
+    } 
+    else if (strcmp(activeTicket->status, "In Progress") == 0) {
+        printf("\nThe next incident in the queue is IN PROGRESS.");
+        printf("\n  1. RESOLVE INCIDENT (Mark as Completed and Close Ticket)");
+        printf("\n  0. Exit without making changes");
+        printf("\nChoose an option: ");
+        if (scanf("%d", &choice) != 1) { while (getchar() != '\n'); return; }
+        while (getchar() != '\n');
+
+        if (choice == 1) {
+            char solution[100];
+            printf("Describe briefly the technical solution applied: ");
+            fgets(solution, sizeof(solution), stdin);
+            solution[strcspn(solution, "\n")] = 0;
+
+            char finalDesc[120];
+            sprintf(finalDesc, "%s (SOLUTION: %s)", activeTicket->description, solution);
+            strncpy(activeTicket->description, finalDesc, sizeof(activeTicket->description) - 1);
+
+            printf("\n>>> [SUCCESS] Ticket #%d resolved successfully!", activeTicket->ticketId);
+
+            Node* currEquip = invHead;
+            while (currEquip != NULL) {
+                if (strcmp(currEquip->data.name, activeTicket->targetCode) == 0) {
+                    strcpy(currEquip->data.status, "Operational");
+                    printf("\n[NOC] Status of equipment '%s' reset to 'Operational'.", currEquip->data.name);
+                    break;
+                }
+                currEquip = currEquip->next;
+            }
+
+            q->front = q->front->next;
+         
+            if (q->front == NULL) {
+                q->rear = NULL;
+            }
+
+            free(activeTicket);
+            printf("\n[FIFO] Ticket removed from the handling queue.\n");
+        }
+    }
+}
+
 void menuIncidents(IncidentQueue* queue, Node* invHead, SensorStack* sensorStack) {
     int option = -1;
 
@@ -1920,7 +1970,7 @@ void menuIncidents(IncidentQueue* queue, Node* invHead, SensorStack* sensorStack
         printf("\n     MODULO 4 - INCIDENT MANAGEMENT     ");
         printf("\n=========================================");
         printf("\n  1. Log new Incident Manually");
-        printf("\n  2. Run Automated Despatch");
+        printf("\n  2. Process Next Incident in Queue");
         printf("\n  3. View Incident Reports");
         printf("\n  0. Return to Main Menu");
         printf("\n=========================================");
@@ -1939,7 +1989,7 @@ void menuIncidents(IncidentQueue* queue, Node* invHead, SensorStack* sensorStack
                 break;
             case 2:
                 clearScreen();
-                dequeueAndProcessIncident(queue);
+                processNextIncident(queue, invHead);
                 break;
             case 3:
                 clearScreen();
