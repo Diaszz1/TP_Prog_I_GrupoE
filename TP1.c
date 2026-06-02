@@ -1629,28 +1629,49 @@ void menuSensors(SensorStack* stack, IncidentQueue* queue) {
 }
 
 int validateAssetExistence(Node* invHead, SensorStack* s, const char* userInput, char* foundCode) {
-    Node* currentEq = invHead;
-    while (currentEq != NULL) {
-        if (strcmp(currentEq->data.name, userInput) == 0 || 
-            strcmp(currentEq->data.ip, userInput) == 0) {
-            strcpy(foundCode, currentEq->data.name);
-        }
-        currentEq = currentEq->next;
+    if (userInput == NULL || strlen(userInput) == 0) return 0;
+
+    char cleanInput[50];
+    strncpy(cleanInput, userInput, sizeof(cleanInput) - 1);
+    cleanInput[sizeof(cleanInput) - 1] = '\0';
+    
+    int len = strlen(cleanInput);
+    while (len > 0 && (cleanInput[len - 1] == '\n' || cleanInput[len - 1] == '\r' || cleanInput[len - 1] == ' ')) {
+        cleanInput[len - 1] = '\0';
+        len--;
     }
 
-    if (s != NULL && s->top != NULL) {
-        SensorReading* currentSensor = s->top;
-        while (currentSensor != NULL) {
-            if (strcmp(currentSensor->code, userInput) == 0 || 
-                strcmp(currentSensor->type, userInput) == 0) {
-                strcpy(foundCode, currentSensor->code);
+    Node* currEquip = invHead;
+    while (currEquip != NULL) {
+        char idStr[15];
+        sprintf(idStr, "%d", currEquip->data.id);
+
+        if (strcmp(currEquip->data.name, cleanInput) == 0 || 
+            strcmp(currEquip->data.ip, cleanInput) == 0 || 
+            strcmp(idStr, cleanInput) == 0) {
+            
+            if (foundCode != NULL) {
+                strcpy(foundCode, currEquip->data.name);
+            }
+            return 1;
+        }
+        currEquip = currEquip->next;
+    }
+
+    if (s != NULL) {
+        SensorReading* currSensor = s->top;
+        while (currSensor != NULL) {
+            if (strcmp(currSensor->code, cleanInput) == 0) {
+                if (foundCode != NULL) {
+                    strcpy(foundCode, currSensor->code); // Guarda o código oficial
+                }
                 return 1;
             }
-            currentSensor = currentSensor->next;
+            currSensor = currSensor->next;
         }
     }
 
-    return 0;
+    return 0; // Não existe em lado nenhum
 }
 
 void createManualIncident(IncidentQueue* q, Node* invHead, SensorStack* s) {
