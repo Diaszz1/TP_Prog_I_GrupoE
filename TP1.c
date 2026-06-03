@@ -2110,6 +2110,34 @@ void loadIncidentsFromBinary(IncidentQueue* q) {
     printf("\n[INFO] %d incidents loaded from 'incidents_backup.bin'.\n", count);
 }
 
+void saveHistoryToBinary(TechnicalIncident* historyHead) {
+    FILE *file = fopen("history.bin", "wb");
+    if (file == NULL) return;
+    TechnicalIncident* current = historyHead;
+    while (current != NULL) {
+        fwrite(current, sizeof(TechnicalIncident), 1, file);
+        current = current->next;
+    }
+    fclose(file);
+}
+
+TechnicalIncident* loadHistoryFromBinary() {
+    FILE * file = fopen("history.bin", "rb");
+    if (file == NULL) return NULL;
+    TechnicalIncident* head = NULL;
+    TechnicalIncident temp;
+    while (fread(&temp, sizeof(TechnicalIncident), 1, file) == 1) {
+        TechnicalIncident* newNode = (TechnicalIncident*)malloc(sizeof(TechnicalIncident));
+        if (newNode != NULL) {
+            *newNode = temp;
+            newNode->next = head;
+            head = newNode;
+        }
+    }
+    fclose(file);
+    return head;
+}
+
 int main() {
     Node* equipmentList = NULL;
     equipmentList = loadInventoryFromBinary(equipmentList);
@@ -2125,7 +2153,7 @@ int main() {
 
     SensorStack sensorStack;
     IncidentQueue incidentQueue;
-    TechnicalIncident* completedHistory = NULL;
+    TechnicalIncident* completedHistory = loadHistoryFromBinary();
     initSensorStack(&sensorStack);
     
     incidentQueue.front = NULL;
@@ -2184,6 +2212,7 @@ int main() {
                 printf("\nSaving session data to backup file...\n"); 
                 saveInventoryToBinary(equipmentList);
                 saveIncidentsToBinary(&incidentQueue);
+                saveHistoryToBinary(completedHistory);
                 printf("\nExiting program. Goodbye!\n");
                 break;
             default:
