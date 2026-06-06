@@ -2346,6 +2346,54 @@ void loadConfigsFromBinary(ConfigStack* stack) {
     fclose(file);
 }
 
+void revertLastConfiguration(ConfigStack* stack, Node* invHead) {
+    if (stack == NULL || stack->top == NULL) {
+        printf("\n=========================================================================");
+        printf("\n                      ROLLBACK / REVERT OPERATION                        ");
+        printf("\n=========================================================================");
+        printf("\n[INFO] Nothing to revert. Configuration history stack is empty.");
+        printf("\n=========================================================================\n");
+        return;
+    }
+
+    NetworkConfig* toRevert = stack->top;
+
+    printf("\n=========================================================================");
+    printf("\n                 ROLLBACK / REVERT OPERATION                        ");
+    printf("\n=========================================================================");
+    printf("\n  Found latest action: Reverting '%s' modification on asset '%s'", toRevert->configType, toRevert->equipmentCode);
+
+    Node* curr = invHead;
+    int restored = 0;
+    while (curr != NULL) {
+        if (strcmp(curr->data.name, toRevert->equipmentCode) == 0) {
+            if (strcmp(toRevert->configType, "IP Address") == 0) {
+                strcpy(curr->data.ip, toRevert->oldValue);
+            } else if (strcmp(toRevert->configType, "Location") == 0) {
+                strcpy(curr->data.location, toRevert->oldValue);
+            } else if (strcmp(toRevert->configType, "Status") == 0) {
+                strcpy(curr->data.status, toRevert->oldValue);
+            }
+            restored = 1;
+            break;
+        }
+        curr = curr->next;
+    }
+
+    stack->top = toRevert->next;
+
+    if (restored) {
+        printf("\n\033[1;32m[SUCCESS] Configuration change reverted. Asset '%s' %s restored to '%s'.\033[0m\n", 
+               toRevert->equipmentCode, toRevert->configType, toRevert->oldValue);
+    } else {
+        printf("\n\033[1;31m[ERROR] Failed to revert configuration. Asset '%s' not found in inventory.\033[0m\n", 
+               toRevert->equipmentCode);
+    }
+    printf("\n=========================================================================\n");
+
+    free(toRevert);
+}
+
 void menuConfigurations(ConfigStack* stack, Node* invHead) {
     int option = -1;
 
@@ -2356,6 +2404,7 @@ void menuConfigurations(ConfigStack* stack, Node* invHead) {
         printf("\n  1. Register New Configuration");
         printf("\n  2. View Latest Configuration Log");
         printf("\n  3. View N Most Recent Configurations");
+        printf("\n  4. Revert Last Configuration ");
         printf("\n  0. Return to Main Menu");
         printf("\n=========================================");
         printf("\nSelect an option: ");
@@ -2378,6 +2427,10 @@ void menuConfigurations(ConfigStack* stack, Node* invHead) {
             case 3:
                 clearScreen();
                 viewNMostRecentConfigurations(stack);
+                break;
+            case 4:
+                clearScreen();
+                revertLastConfiguration(stack, invHead);
                 break;
             case 0:
                 printf("\nReturning to Main Menu");
