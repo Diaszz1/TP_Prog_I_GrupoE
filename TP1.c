@@ -2247,6 +2247,105 @@ void registerNewConfiguration(ConfigStack* stack, Node* invHead) {
            code, typeStr, oldVal, newVal);
 }
 
+void displayLastConfiguration(ConfigStack* stack) {
+    if (stack == NULL || stack ->top == NULL) {
+        printf("\n=========================================================================");
+        printf("\n                      LATEST CONFIGURATION LOGS                          ");
+        printf("\n=========================================================================");
+        printf("\n[INFO] No configuration changes logged yet.");
+        printf("\n=========================================================================\n");
+        return;
+    }
+
+    NetworkConfig* last = stack->top;
+
+    printf("\n=========================================");
+    printf("\n        LATEST CONFIGURATION APPLIED     ");
+    printf("\n=========================================");
+    printf("\n  Asset Code:  %s", last->equipmentCode);
+    printf("\n  Config Type: %s", last->configType);
+    printf("\n  Old Value:   [%s]", last->oldValue);
+    printf("\n  New Value:   [%s]", last->newValue);
+    printf("\n  Date/Time:   %s", last->timestamp);
+    printf("\n  Technician:  %s", last->technician);
+    printf("\n=========================================\n");
+}
+
+void displayNRecentConfigurations(ConfigStack* stack) {
+    if (stack == NULL || stack->top == NULL) {
+        printf("\n=========================================================================");
+        printf("\n                      RECENT CONFIGURATION LOGS                          ");
+        printf("\n=========================================================================");
+        printf("\n[INFO] No configuration changes logged yet.");
+        printf("\n=========================================================================\n");
+        return;
+    }
+
+    int n, count = 0;
+    printf("\nEnter the number of recent configurations to display: ");
+    if (scanf("%d", &n) != 1) {
+        while (getchar() != '\n');
+        printf("\n[ERROR] Invalid input. Display cancelled.\n");
+        return;
+    }
+    while (getchar() != '\n');
+
+    NetworkConfig* current = stack->top;
+
+    printf("\n=================================================================================================================");
+    printf("\n                                       LIST OF %d MOST RECENT CONFIGURATIONS                                     ", n);
+    printf("\n=================================================================================================================");
+    
+    while (current != NULL && count < n) {
+        printf("\n#%-3d | Asset: %-15s | Type: %-10s | Change: [%s] -> [%s]", 
+               count + 1, current->equipmentCode, current->configType, current->oldValue, current->newValue);
+        printf("\n     | Processed by: %-12s | Timestamp: %s", 
+               current->technician, current->timestamp);
+        printf("\n-----------------------------------------------------------------------------------------------------------------");
+        
+        current = current->next;
+        count++;
+    }
+    printf("\n=================================================================================================================\n");
+}
+
+void saveConfigsToBinary(ConfigStack* stack) {
+    FILE* file = fopen("configs.bin", "wb");
+    if (file == NULL) return;
+
+    NetworkConfig* current = stack->top;
+    while (current != NULL) {
+        fwrite(current, sizeof(NetworkConfig), 1, file);
+        current = current->next;
+    }
+    fclose(file);
+}
+
+void loadConfigsFromBinary(ConfigStack* stack) {
+    FILE* file = fopen("configs.bin", "rb");
+    if (file == NULL) return;
+
+    NetworkConfig temp;
+    NetworkConfig* tail = NULL;
+
+    while (fread(&temp, sizeof(NetworkConfig), 1, file) == 1) {
+        NetworkConfig* newNode = (NetworkConfig*)malloc(sizeof(NetworkConfig));
+        if (newNode == NULL) continue;
+
+        *newNode = temp;
+        newNode->next = NULL;
+
+        if (stack->top == NULL) {
+            stack->top = newNode;
+            tail = newNode;
+        } else {
+            tail->next = newNode;
+        }
+        tail = newNode;
+    }
+    fclose(file);
+}
+
 void menuConfigurations(ConfigStack* stack, Node* invHead) {
     int option = -1;
 
@@ -2255,6 +2354,8 @@ void menuConfigurations(ConfigStack* stack, Node* invHead) {
         printf("\n      MINI NOC SYSTEM - CONFIGURATIONS     ");
         printf("\n=========================================");
         printf("\n  1. Register New Configuration");
+        printf("\n  2. View Latest Configuration Log");
+        printf("\n  3. View N Most Recent Configurations");
         printf("\n  0. Return to Main Menu");
         printf("\n=========================================");
         printf("\nSelect an option: ");
@@ -2269,6 +2370,14 @@ void menuConfigurations(ConfigStack* stack, Node* invHead) {
             case 1:
                 clearScreen();
                 registerNewConfiguration(stack, invHead);
+                break;
+            case 2:
+                clearScreen();
+                viewLatestConfigurationLog(stack);
+                break;
+            case 3:
+                clearScreen();
+                viewNMostRecentConfigurations(stack);
                 break;
             case 0:
                 printf("\nReturning to Main Menu");
@@ -2293,7 +2402,8 @@ int main() {
     }
     ConfigStack configStack;
     configStack.top = NULL;
-    
+    loadConfigsFromBinary(&configStack);
+
     SensorStack sensorStack;
     IncidentQueue incidentQueue;
     TechnicalIncident* completedHistory = loadHistoryFromBinary();
@@ -2318,6 +2428,7 @@ int main() {
         printf("\n 2. Connectivity & Network Tests");
         printf("\n 3. Sensor Data");
         printf("\n 4. Incident Managment");
+        printf("\n 5. Configuration Logs");
         printf("\n 0. Exit Program");
         printf("\n=========================================");
         printf("\nChoose an option: ");
@@ -2349,6 +2460,12 @@ int main() {
             case 4:
                 clearScreen();
                 menuIncidents(&incidentQueue, equipmentList, &sensorStack, &completedHistory);
+                clearScreen();
+                break;
+            case 5:
+                clearScreen();
+                menuConfigurations(&configStack, equipmentList);
+                clearScreen();
                 break;
             case 0:
                 clearScreen();
@@ -2356,6 +2473,7 @@ int main() {
                 saveInventoryToBinary(equipmentList);
                 saveIncidentsToBinary(&incidentQueue);
                 saveHistoryToBinary(completedHistory);
+                saveConfigsToBinary(&configStack);
                 printf("\nExiting program. Goodbye!\n");
                 break;
             default:
