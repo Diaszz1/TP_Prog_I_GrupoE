@@ -2394,6 +2394,45 @@ void revertLastConfiguration(ConfigStack* stack, Node* invHead) {
     free(toRevert);
 }
 
+void displayAssetConfigHistory(ConfigStack* stack) {
+    if (stack == NULL || stack->top == NULL) {
+        printf("\n=========================================================================");
+        printf("\n                      ASSET CONFIGURATION HISTORY                        ");
+        printf("\n=========================================================================");
+        printf("\n[INFO] No configurations found in the registry stack.");
+        printf("\n=========================================================================\n");
+        return;
+    }
+
+    char code[50];
+    printf("\nEnter Equipment Name / Code to filter history: ");
+    fgets(code, sizeof(code), stdin);
+    code [strcspn(code, "\n")] = 0;
+
+    NetworkConfig* current = stack->top;
+    int found = 0;
+
+    printf("\n=================================================================================================================");
+    printf("\n                                    CONFIGURATION LOGS FOR ASSET: %-30s", code);
+    printf("\n=================================================================================================================");
+
+    while (current != NULL) {
+        if (strcmp(current->equipmentCode, code) == 0) {
+            printf("\nDate/Time:  %s", current->timestamp);
+            printf("\nTechnician: %-15s | Parameter Modified: %s", current->technician, current->configType);
+            printf("\nModification: [%s] ----> [%s]", current->oldValue, current->newValue);
+            printf("\n-----------------------------------------------------------------------------------------------------------------");
+            found = 1;
+        }
+        current = current->next; // Desce na pilha
+    }
+
+    if (!found) {
+        printf("\n[INFO] No configuration records found for equipment '%s'.", code);
+    }
+    printf("\n=================================================================================================================\n");
+}
+
 void menuConfigurations(ConfigStack* stack, Node* invHead) {
     int option = -1;
 
@@ -2405,6 +2444,7 @@ void menuConfigurations(ConfigStack* stack, Node* invHead) {
         printf("\n  2. View Latest Configuration Log");
         printf("\n  3. View N Most Recent Configurations");
         printf("\n  4. Revert Last Configuration ");
+        printf("\n  5. Display Asset's Config History");
         printf("\n  0. Return to Main Menu");
         printf("\n=========================================");
         printf("\nSelect an option: ");
@@ -2431,6 +2471,10 @@ void menuConfigurations(ConfigStack* stack, Node* invHead) {
             case 4:
                 clearScreen();
                 revertLastConfiguration(stack, invHead);
+                break;
+            case 5:
+                clearScreen();
+                displayAssetConfigHistory(stack);
                 break;
             case 0:
                 printf("\nReturning to Main Menu");
