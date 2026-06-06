@@ -69,6 +69,20 @@ typedef struct {
     TechnicalIncident* rear;
 } IncidentQueue;
 
+typedef struct NetworkConfig {
+    char equipmentCode[50];
+    char configType[30];
+    char oldValue[50];
+    char newValue[50];
+    char timestamp[30];
+    char technician[50];
+    struct NetworkConfig* next;
+} NetworkConfig;
+
+typedef struct {
+    NetworkConfig* top;
+} ConfigStack;
+
 void getCurrentDateTime(char* buffer) {
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
@@ -2022,7 +2036,7 @@ void menuIncidents(IncidentQueue* queue, Node* invHead, SensorStack* sensorStack
 
     do {
         printf("\n=========================================");
-        printf("\n      INCIDENT MANAGEMENT     ");
+        printf("\n      MINI NOC SYSTEM - INCIDENT MANAGEMENT     ");
         printf("\n=========================================");
         printf("\n  1. Log new Incident Manually");
         printf("\n  2. Process Next Incident in Queue");
@@ -2138,6 +2152,133 @@ TechnicalIncident* loadHistoryFromBinary() {
     return head;
 }
 
+void pushConfiguration(ConfigStack* stack, char* code, char* type, char* oldVal, char* newVal, char* tech) {
+    NetworkConfig* newLog = (NetworkConfig*)malloc(sizeof(NetworkConfig));
+    if (newLog == NULL) {
+        printf("\n[ERROR] Memory allocation failed for new configuration log.\n");
+        return;
+    }
+
+    strcpy(newLog->equipmentCode, code);
+    strcpy(newLog->configType, type);
+    strcpy(newLog->oldValue, oldVal);
+    strcpy(newLog->newValue, newVal);
+    strcpy(newLog->technician, tech);
+    getCurrentDateTime(newLog->timestamp);
+
+    newLog->next = stack->top;
+    stack->top = newLog;
+}
+
+void registerNewConfiguration(ConfigStack* stack, Node* invHead) {
+    char code[50], type[30], newVal[50], tech[30];
+    char oldVal[50] = "";
+    int typeChoice = 0;
+
+    printf("\n=================================================");
+    printf("\n         REGISTER NEW CONFIGURATION          ");
+    printf("\n=================================================");
+
+    printf("\nEnter Equipment Name/Code: ");
+    fgets(code, sizeof(code), stdin);
+    code[strcspn(code, "\n")] = 0;
+
+    Node* curr = invHead;
+    int found = 0;
+    while (curr != NULL) {
+        if (strcmp(curr->data.name, code) == 0) {
+            found = 1;
+            break;
+        }
+        curr = curr->next;
+    }
+    if (!found) {
+        printf("\n[ERROR] Equipment '%s' not found in inventory.\n", code);
+        return;
+    }
+
+    Printf("\nSelect Parameter to modify:\n");
+    printf(" 1. IP Address (Current: %s)\n", curr->data.ip);
+    printf(" 2. Location   (Current: %s)\n", curr->data.location);
+    printf(" 3. Status     (Current: %s)\n", curr->data.status);
+    printf("Choose option(1-3): ");
+
+    if (scanf("%d", &typeChoice != 1)) {
+        while (getchar() != '\n');
+        printf("\n[ERROR] Invalid input. Configuration registration cancelled.\n");
+        return;
+    }
+    while (getchar() != '\n');
+
+    char typeStr[30];
+    if (typeChoice == 1) {
+        strcpy(typeStr, "IP Address");
+        strcpy(oldVal, curr->data.ip);
+    } else if (typeChoice == 2) {
+        strcpy(typeStr, "Location");
+        strcpy(oldVal, curr->data.location);
+    } else if (typeChoice == 3) {
+        strcpy(typeStr, "Status");
+        strcpy(oldVal, curr->data.status);
+    } else {
+        printf("\n[ERROR] Invalid choice. Configuration registration cancelled.\n");
+        return;
+    }
+
+    printf("Enter new value for %s: ", typeStr);
+    fgets(newVal, sizeof(newVal), stdin);
+    newVal[strcspn(newVal, "\n")] = 0;
+
+    printf("Enter Technician name: ");
+    fgets(tech, sizeof(tech), stdin);
+    tech[strcspn(tech, "\n")] = 0;
+
+    if (typeChoice == 1) {
+        strcpy(curr->data.ip, newVal);
+    } else if (typeChoice == 2) {
+        strcpy(curr->data.location, newVal);
+    } else if (typeChoice == 3) {
+        strcpy(curr->data.status, newVal);
+    }
+
+    pushConfiguration(stack, code, typeStr, oldVal, newVal, tech);
+
+    printf("\n\033[1;32m[SUCCESS] Configuration change registered for '%s' - %s updated from '%s' to '%s'.\033[0m\n", 
+           code, typeStr, oldVal, newVal);
+}
+
+void menuConfigurations(ConfigStack* stack, Node* invHead) {
+    int option = -1;
+
+    do {
+        printf("\n=========================================");
+        printf("\n      MINI NOC SYSTEM - CONFIGURATIONS     ");
+        printf("\n=========================================");
+        printf("\n  1. Register New Configuration");
+        printf("\n  0. Return to Main Menu");
+        printf("\n=========================================");
+        printf("\nSelect an option: ");
+
+        if (scanf("%d", &option) != 1) {
+            while (getchar() != '\n');
+            continue;
+        }
+        while (getchar() != '\n');
+
+        switch (option) {
+            case 1:
+                clearScreen();
+                registerNewConfiguration(stack, invHead);
+                break;
+            case 0:
+                printf("\nReturning to Main Menu");
+                break;
+            default:
+                printf("Invalid option. Please try again.\n");
+        }
+    }while (option != 0);
+}
+
 int main() {
     Node* equipmentList = NULL;
     equipmentList = loadInventoryFromBinary(equipmentList);
@@ -2150,7 +2291,9 @@ int main() {
     } else {
         printf("\n>>> [SYSTEM] Linux Environment Detected Automatically.\n");
     }
-
+    ConfigStack configStack;
+    configStack.top = NULL;
+    
     SensorStack sensorStack;
     IncidentQueue incidentQueue;
     TechnicalIncident* completedHistory = loadHistoryFromBinary();
