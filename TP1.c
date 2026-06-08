@@ -2311,11 +2311,17 @@ void displayNRecentConfigurations(ConfigStack* stack) {
 
 void saveConfigsToBinary(ConfigStack* stack) {
     FILE* file = fopen("configs.bin", "wb");
-    if (file == NULL) return;
+    if (file == NULL) {
+        printf("[ERROR] Could not open configs.bin for writing.\n");
+        return;
+    }
 
     NetworkConfig* current = stack->top;
     while (current != NULL) {
-        fwrite(current, sizeof(NetworkConfig), 1, file);
+        NetworkConfig temp = *current;
+        temp.next = NULL;
+
+        fwrite(&temp, sizeof(NetworkConfig), 1, file);
         current = current->next;
     }
     fclose(file);
@@ -2326,6 +2332,7 @@ void loadConfigsFromBinary(ConfigStack* stack) {
     if (file == NULL) return;
 
     NetworkConfig temp;
+    ConfigStack tempStack;
     NetworkConfig* tail = NULL;
 
     while (fread(&temp, sizeof(NetworkConfig), 1, file) == 1) {
@@ -2333,17 +2340,18 @@ void loadConfigsFromBinary(ConfigStack* stack) {
         if (newNode == NULL) continue;
 
         *newNode = temp;
-        newNode->next = NULL;
-
-        if (stack->top == NULL) {
-            stack->top = newNode;
-            tail = newNode;
-        } else {
-            tail->next = newNode;
-        }
-        tail = newNode;
+        newNode->next = tempStack.top;
+        tempStack.top = newNode;
     }
     fclose(file);
+
+    while (tempStack.top != NULL) {
+        NetworkConfig* node = tempStack.top;
+        tempStack.top = node->next;
+
+        node->next = stack->top;
+        stack->top = node;
+    }
 }
 
 NetworkConfig* popConfig(ConfigStack* stack) {
