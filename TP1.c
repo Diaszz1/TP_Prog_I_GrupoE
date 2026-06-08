@@ -2075,7 +2075,7 @@ void menuIncidents(IncidentQueue* queue, Node* invHead, SensorStack* sensorStack
 }
 
 void saveIncidentsToBinary(IncidentQueue* q) {
-    FILE* file = fopen("incidents_backup.bin", "wb");
+    FILE* file = fopen("incidents_back.dat", "wb");
     if (file == NULL) {
         printf("\n[ERROR] Failed to open incidents backup file.\n");
         return;
@@ -2090,11 +2090,11 @@ void saveIncidentsToBinary(IncidentQueue* q) {
         current = current->next;
     }
     fclose(file);
-    printf("\n[INFO] %d incidents saved to 'incidents_backup.bin'.\n", count);
+    printf("\n[INFO] %d incidents saved to 'incidents_backup.dat'.\n", count);
 }
 
 void loadIncidentsFromBinary(IncidentQueue* q) {
-    FILE* file = fopen("incidents_backup.bin", "rb");
+    FILE* file = fopen("incidents_backup.dat", "rb");
     if (file == NULL) {
         printf("\n[INFO] No existing incident backup found. Starting with an empty queue.\n");
         return;
@@ -2121,11 +2121,11 @@ void loadIncidentsFromBinary(IncidentQueue* q) {
         count++;
     }
     fclose(file);
-    printf("\n[INFO] %d incidents loaded from 'incidents_backup.bin'.\n", count);
+    printf("\n[INFO] %d incidents loaded from 'incidents_backup.dat'.\n", count);
 }
 
 void saveHistoryToBinary(TechnicalIncident* historyHead) {
-    FILE *file = fopen("history.bin", "wb");
+    FILE *file = fopen("history.dat", "wb");
     if (file == NULL) return;
     TechnicalIncident* current = historyHead;
     while (current != NULL) {
@@ -2136,7 +2136,7 @@ void saveHistoryToBinary(TechnicalIncident* historyHead) {
 }
 
 TechnicalIncident* loadHistoryFromBinary() {
-    FILE * file = fopen("history.bin", "rb");
+    FILE * file = fopen("history.dat", "rb");
     if (file == NULL) return NULL;
     TechnicalIncident* head = NULL;
     TechnicalIncident temp;
@@ -2170,16 +2170,40 @@ void pushConfiguration(ConfigStack* stack, char* code, char* type, char* oldVal,
     stack->top = newLog;
 }
 
-void registerNewConfiguration(ConfigStack* stack, Node* invHead) {
-    char code[50], type[30], newVal[50], tech[30];
+void registerNewConfiguration(ConfigStack* stack, Node* invHead, SensorStack* sensorStack) {
+    char code[50], typeStr[30], newVal[50], tech[30];
     char oldVal[50] = "";
     int typeChoice = 0;
 
     printf("\n=================================================");
-    printf("\n         REGISTER NEW CONFIGURATION          ");
+    printf("\n         REGISTER NEW CONFIGURATION              ");
     printf("\n=================================================");
 
-    printf("\nEnter Equipment Name/Code: ");
+    printf("\n[AVAILABLE EQUIPMENTS IN INVENTORY]:\n");
+    if (invHead == NULL) {
+        printf("  -> No equipments registered.\n");
+    } else {
+        Node* listCurr = invHead;
+        while (listCurr != NULL) {
+            printf("  • [Code/Name]: %-15s | Location: %s\n", listCurr->data.name, listCurr->data.location);
+            listCurr = listCurr->next;
+        }
+    }
+
+    printf("\n[AVAILABLE SENSORS IN SYSTEM]:\n");
+    if (sensorStack == NULL || sensorStack->top == NULL) {
+        printf("  -> No sensors registered in memory.\n");
+    } else {
+        SensorReading* sensCurr = sensorStack->top; 
+        while (sensCurr != NULL) {
+            printf("  • [Sensor Code]: %-12s | Type: %s | Last Value: %.2f %s\n", 
+                   sensCurr->code, sensCurr->type, sensCurr->value, sensCurr->unit);
+            sensCurr = sensCurr->next;
+        }
+    }
+    printf("=================================================\n");
+
+    printf("\nEnter Equipment Name/Code or Sensor Code: ");
     fgets(code, sizeof(code), stdin);
     code[strcspn(code, "\n")] = 0;
 
@@ -2187,58 +2211,106 @@ void registerNewConfiguration(ConfigStack* stack, Node* invHead) {
     int found = 0;
     while (curr != NULL) {
         if (strcmp(curr->data.name, code) == 0) {
-            found = 1;
+            found = 1; 
             break;
         }
         curr = curr->next;
     }
+
+    SensorReading* targetSensor = NULL;
+    if (!found && sensorStack != NULL) {
+        SensorReading* sensCurr = sensorStack->top; 
+        while (sensCurr != NULL) {
+            if (strcmp(sensCurr->code, code) == 0) {
+                found = 2; 
+                targetSensor = sensCurr;
+                break;
+            }
+            sensCurr = sensCurr->next;
+        }
+    }
+
     if (!found) {
-        printf("\n[ERROR] Equipment '%s' not found in inventory.\n", code);
+        printf("\n[ERROR] Asset/Sensor '%s' not found in system.\n", code);
         return;
     }
 
-    Printf("\nSelect Parameter to modify:\n");
-    printf(" 1. IP Address (Current: %s)\n", curr->data.ip);
-    printf(" 2. Location   (Current: %s)\n", curr->data.location);
-    printf(" 3. Status     (Current: %s)\n", curr->data.status);
-    printf("Choose option(1-3): ");
+    if (found == 1) {
+        printf("\nSelect Parameter to modify:\n");
+        printf(" 1. IP Address (Current: %s)\n", curr->data.ip);
+        printf(" 2. Location   (Current: %s)\n", curr->data.location);
+        printf(" 3. Status     (Current: %s)\n", curr->data.status);
+        printf("Choose option(1-3): ");
 
-    if (scanf("%d", &typeChoice != 1)) {
+        if (scanf("%d", &typeChoice) != 1) {
+            while (getchar() != '\n');
+            printf("\n[ERROR] Invalid input. Cancelled.\n");
+            return;
+        }
         while (getchar() != '\n');
-        printf("\n[ERROR] Invalid input. Configuration registration cancelled.\n");
-        return;
-    }
-    while (getchar() != '\n');
 
-    char typeStr[30];
-    if (typeChoice == 1) {
-        strcpy(typeStr, "IP Address");
-        strcpy(oldVal, curr->data.ip);
-    } else if (typeChoice == 2) {
-        strcpy(typeStr, "Location");
-        strcpy(oldVal, curr->data.location);
-    } else if (typeChoice == 3) {
-        strcpy(typeStr, "Status");
-        strcpy(oldVal, curr->data.status);
-    } else {
-        printf("\n[ERROR] Invalid choice. Configuration registration cancelled.\n");
-        return;
-    }
+        if (typeChoice == 1) {
+            strcpy(typeStr, "IP Address");
+            strcpy(oldVal, curr->data.ip);
+        } else if (typeChoice == 2) {
+            strcpy(typeStr, "Location");
+            strcpy(oldVal, curr->data.location);
+        } else if (typeChoice == 3) {
+            strcpy(typeStr, "Status");
+            strcpy(oldVal, curr->data.status);
+        } else {
+            printf("\n[ERROR] Invalid choice. Cancelled.\n");
+            return;
+        }
 
-    printf("Enter new value for %s: ", typeStr);
-    fgets(newVal, sizeof(newVal), stdin);
-    newVal[strcspn(newVal, "\n")] = 0;
+        printf("Enter new value for %s: ", typeStr);
+        fgets(newVal, sizeof(newVal), stdin);
+        newVal[strcspn(newVal, "\n")] = 0;
 
-    printf("Enter Technician name: ");
-    fgets(tech, sizeof(tech), stdin);
-    tech[strcspn(tech, "\n")] = 0;
+        printf("Enter Technician name: ");
+        fgets(tech, sizeof(tech), stdin);
+        tech[strcspn(tech, "\n")] = 0;
 
-    if (typeChoice == 1) {
-        strcpy(curr->data.ip, newVal);
-    } else if (typeChoice == 2) {
-        strcpy(curr->data.location, newVal);
-    } else if (typeChoice == 3) {
-        strcpy(curr->data.status, newVal);
+        if (typeChoice == 1) strcpy(curr->data.ip, newVal);
+        else if (typeChoice == 2) strcpy(curr->data.location, newVal);
+        else if (typeChoice == 3) strcpy(curr->data.status, newVal);
+        
+    } else if (found == 2) {
+        printf("\nSelect Parameter to modify for Sensor:\n");
+        printf(" 1. Sensor Status (Current: %s)\n", targetSensor->status);
+        printf(" 2. Simulated Value (Current: %.2f %s)\n", targetSensor->value, targetSensor->unit);
+        printf("Choose option(1-2): ");
+
+        if (scanf("%d", &typeChoice) != 1 || (typeChoice != 1 && typeChoice != 2)) {
+            while (getchar() != '\n');
+            printf("\n[ERROR] Invalid choice. Cancelled.\n");
+            return;
+        }
+        while (getchar() != '\n');
+
+        if (typeChoice == 1) {
+            strcpy(typeStr, "Sensor Status");
+            strcpy(oldVal, targetSensor->status);
+            
+            printf("Enter new status: ");
+            fgets(newVal, sizeof(newVal), stdin);
+            newVal[strcspn(newVal, "\n")] = 0;
+            
+            strcpy(targetSensor->status, newVal);
+        } else {
+            strcpy(typeStr, "Sensor Value");
+            sprintf(oldVal, "%.2f", targetSensor->value);
+            
+            printf("Enter new float value: ");
+            fgets(newVal, sizeof(newVal), stdin);
+            newVal[strcspn(newVal, "\n")] = 0;
+            
+            targetSensor->value = atof(newVal);
+        }
+
+        printf("Enter Technician name: ");
+        fgets(tech, sizeof(tech), stdin);
+        tech[strcspn(tech, "\n")] = 0;
     }
 
     pushConfiguration(stack, code, typeStr, oldVal, newVal, tech);
@@ -2310,9 +2382,9 @@ void displayNRecentConfigurations(ConfigStack* stack) {
 }
 
 void saveConfigsToBinary(ConfigStack* stack) {
-    FILE* file = fopen("configs.bin", "wb");
+    FILE* file = fopen("configs.dat", "wb");
     if (file == NULL) {
-        printf("[ERROR] Could not open configs.bin for writing.\n");
+        printf("[ERROR] Could not open configs.dat for writing.\n");
         return;
     }
 
@@ -2328,12 +2400,13 @@ void saveConfigsToBinary(ConfigStack* stack) {
 }
 
 void loadConfigsFromBinary(ConfigStack* stack) {
-    FILE* file = fopen("configs.bin", "rb");
+    FILE* file = fopen("configs.dat", "rb");
     if (file == NULL) return;
 
     NetworkConfig temp;
     ConfigStack tempStack;
-    NetworkConfig* tail = NULL;
+
+    tempStack.top = NULL;   // <-- FALTA ISTO
 
     while (fread(&temp, sizeof(NetworkConfig), 1, file) == 1) {
         NetworkConfig* newNode = (NetworkConfig*)malloc(sizeof(NetworkConfig));
@@ -2343,6 +2416,7 @@ void loadConfigsFromBinary(ConfigStack* stack) {
         newNode->next = tempStack.top;
         tempStack.top = newNode;
     }
+
     fclose(file);
 
     while (tempStack.top != NULL) {
@@ -2365,89 +2439,122 @@ NetworkConfig* popConfig(ConfigStack* stack) {
 }
 
 void revertLastConfiguration(ConfigStack* stack, Node* invHead) {
+    printf("\n=========================================");
+    printf("\n     REVERT LAST CONFIGURATION (ROLLBACK) ");
+    printf("\n=========================================");
 
-    NetworkConfig* toRevert = popConfig(stack);
-
-    if (toRevert == NULL) {
-        printf("\n=========================================================================");
-        printf("\n                      ROLLBACK / REVERT OPERATION                        ");
-        printf("\n=========================================================================");
-        printf("\n[INFO] Nothing to revert. Configuration history stack is empty.");
-        printf("\n=========================================================================\n");
+    if (stack == NULL || stack->top == NULL) {
+        printf("\n[INFO] No configurations found in history to revert.\n");
         return;
     }
 
-    printf("\n=========================================================================");
-    printf("\n                 ROLLBACK / REVERT OPERATION                        ");
-    printf("\n=========================================================================");
-    printf("\n  Found latest action: Reverting '%s' modification on asset '%s'", toRevert->configType, toRevert->equipmentCode);
+    NetworkConfig* lastLog = stack->top;
 
     Node* curr = invHead;
-    int restored = 0;
+    int found = 0;
     while (curr != NULL) {
-        if (strcmp(curr->data.name, toRevert->equipmentCode) == 0) {
-            if (strcmp(toRevert->configType, "IP Address") == 0) {
-                strcpy(curr->data.ip, toRevert->oldValue);
-            } else if (strcmp(toRevert->configType, "Location") == 0) {
-                strcpy(curr->data.location, toRevert->oldValue);
-            } else if (strcmp(toRevert->configType, "Status") == 0) {
-                strcpy(curr->data.status, toRevert->oldValue);
-            }
-            restored = 1;
+        if (strcmp(curr->data.name, lastLog->equipmentCode) == 0) {
+            found = 1;
             break;
         }
         curr = curr->next;
     }
 
-    if (restored) {
-        printf("\n\033[1;32m[SUCCESS] Configuration change reverted. Asset '%s' %s restored to '%s'.\033[0m\n", 
-               toRevert->equipmentCode, toRevert->configType, toRevert->oldValue);
-    } else {
-        printf("\n\033[1;31m[ERROR] Failed to revert configuration. Asset '%s' not found in inventory.\033[0m\n", 
-               toRevert->equipmentCode);
-    }
-    printf("\n=========================================================================\n");
-
-    free(toRevert);
-}
-
-void displayAssetConfigHistory(ConfigStack* stack) {
-    if (stack == NULL || stack->top == NULL) {
-        printf("\n=========================================================================");
-        printf("\n                      ASSET CONFIGURATION HISTORY                        ");
-        printf("\n=========================================================================");
-        printf("\n[INFO] No configurations found in the registry stack.");
-        printf("\n=========================================================================\n");
+    if (!found) {
+        printf("\n[ERROR] Asset '%s' from the last log was not found in the inventory.\n", lastLog->equipmentCode);
         return;
     }
 
-    char code[50];
-    printf("\nEnter Equipment Name / Code to filter history: ");
-    fgets(code, sizeof(code), stdin);
-    code [strcspn(code, "\n")] = 0;
+    char typeStr[30], currentVal[50], rollbackVal[50];
+    strcpy(typeStr, lastLog->configType);
+    strcpy(rollbackVal, lastLog->oldValue);
 
-    NetworkConfig* current = stack->top;
-    int found = 0;
+    if (strcmp(typeStr, "IP Address") == 0) {
+        strcpy(currentVal, curr->data.ip);   
+        strcpy(curr->data.ip, rollbackVal);
+    } else if (strcmp(typeStr, "Location") == 0) {
+        strcpy(currentVal, curr->data.location);
+        strcpy(curr->data.location, rollbackVal);
+    } else if (strcmp(typeStr, "Status") == 0) {
+        strcpy(currentVal, curr->data.status);
+        strcpy(curr->data.status, rollbackVal);
+    } else {
+        printf("\n[ERROR] Unknown configuration parameter type.\n");
+        return;
+    }
 
-    printf("\n=================================================================================================================");
-    printf("\n                                    CONFIGURATION LOGS FOR ASSET: %-30s", code);
-    printf("\n=================================================================================================================");
+    char techName[50] = "SYSTEM (Rollback)";
+    
+    pushConfiguration(stack, lastLog->equipmentCode, typeStr, currentVal, rollbackVal, techName);
 
-    while (current != NULL) {
-        if (strcmp(current->equipmentCode, code) == 0) {
-            printf("\nDate/Time:  %s", current->timestamp);
-            printf("\nTechnician: %-15s | Parameter Modified: %s", current->technician, current->configType);
-            printf("\nModification: [%s] ----> [%s]", current->oldValue, current->newValue);
-            printf("\n-----------------------------------------------------------------------------------------------------------------");
-            found = 1;
+    printf("\n\033[1;32m[SUCCESS] Rollback executed successfully!\033[0m\n");
+    printf("Asset '%s' parameter '%s' reverted from '%s' back to '%s'.\n", 
+           lastLog->equipmentCode, typeStr, currentVal, rollbackVal);
+    printf("[AUDIT] This rollback action has been appended to the history log.\n");
+}
+
+void displayAssetConfigHistory(ConfigStack* stack) {
+    printf("\n=========================================");
+    printf("\n         ASSET CONFIG HISTORY LOGS       ");
+    printf("\n=========================================");
+
+    if (stack == NULL || stack->top == NULL) {
+        printf("\n[INFO] No configuration logs found in history.\n");
+        return;
+    }
+
+    printf("\n[ASSETS WITH AVAILABLE CONFIGURATION LOGS]:\n");
+    
+    char seenCodes[100][50]; 
+    int seenCount = 0;
+
+    NetworkConfig* curr = stack->top;
+    while (curr != NULL) {
+        int alreadySeen = 0;
+        for (int i = 0; i < seenCount; i++) {
+            if (strcmp(seenCodes[i], curr->equipmentCode) == 0) {
+                alreadySeen = 1;
+                break;
+            }
         }
-        current = current->next; // Desce na pilha
+        
+        if (!alreadySeen && seenCount < 100) {
+            printf("  • %s\n", curr->equipmentCode);
+            strcpy(seenCodes[seenCount], curr->equipmentCode);
+            seenCount++;
+        }
+        curr = curr->next;
+    }
+    printf("-----------------------------------------");
+
+    char searchCode[50];
+    printf("\nEnter Asset or Sensor Code to view full history: ");
+    fgets(searchCode, sizeof(searchCode), stdin);
+    searchCode[strcspn(searchCode, "\n")] = 0;
+
+    printf("\n=========================================");
+    printf("\n       HISTORY FOR ASSET: %-15s", searchCode);
+    printf("\n=========================================");
+    
+    curr = stack->top;
+    int foundAny = 0;
+
+    while (curr != NULL) {
+        if (strcmp(curr->equipmentCode, searchCode) == 0) {
+            foundAny = 1;
+            printf("\n  Timestamp : %s", curr->timestamp);
+            printf("\n  Parameter : %s", curr->configType);
+            printf("\n  Old Value : %s", curr->oldValue);
+            printf("\n  New Value : %s", curr->newValue);
+            printf("\n  Technician: %s", curr->technician);
+            printf("\n-----------------------------------------");
+        }
+        curr = curr->next;
     }
 
-    if (!found) {
-        printf("\n[INFO] No configuration records found for equipment '%s'.", code);
+    if (!foundAny) {
+        printf("\n[INFO] No configuration registry found for asset '%s'.\n", searchCode);
     }
-    printf("\n=================================================================================================================\n");
 }
 
 void clearConfigHistoryOptions(ConfigStack* stack) {
@@ -2488,7 +2595,7 @@ void clearConfigHistoryOptions(ConfigStack* stack) {
                 NetworkConfig* toFree = popConfig(stack);
                 free(toFree);
             }
-            remove("configs.bin");
+            remove("configs.dat");
             printf("\n\033[1;32m[SUCCESS] All configuration logs deleted successfully.\033[0m\n");
         }
     }
@@ -2593,7 +2700,7 @@ void checkStackHealth(ConfigStack* stack) {
     printf("\n=========================================\n");
 }
 
-void menuConfigurations(ConfigStack* stack, Node* invHead) {
+void menuConfigurations(ConfigStack* stack, Node* invHead, SensorStack* sensorStack) {
     int option = -1;
 
     do {
@@ -2621,15 +2728,15 @@ void menuConfigurations(ConfigStack* stack, Node* invHead) {
         switch (option) {
             case 1:
                 clearScreen();
-                registerNewConfiguration(stack, invHead);
+                registerNewConfiguration(stack, invHead, sensorStack);
                 break;
             case 2:
                 clearScreen();
-                viewLatestConfigurationLog(stack);
+                displayLastConfiguration(stack);
                 break;
             case 3:
                 clearScreen();
-                viewNMostRecentConfigurations(stack);
+                displayNRecentConfigurations(stack);
                 break;
             case 4:
                 clearScreen();
@@ -2689,7 +2796,10 @@ int main() {
 
     importSensorReadings(&sensorStack, &incidentQueue);
 
-    int option;
+    printf("\nPress Enter to start the application...");
+    getchar();
+
+    int mainOption = -1;
 
     do {
         printf("\n=========================================");
@@ -2704,7 +2814,7 @@ int main() {
         printf("\n=========================================");
         printf("\nChoose an option: ");
         
-        if(scanf("%d", &option) != 1) {
+        if(scanf("%d", &mainOption) != 1) {
             printf("Invalid input. Please enter a number.\n");
             int c;
             while ((c = getchar()) != '\n' && c != EOF);
@@ -2712,7 +2822,7 @@ int main() {
         }
         getchar();
 
-        switch (option) {
+        switch (mainOption) {
             case 1:
                 clearScreen();
                 equipmentList = menuInventory(equipmentList);
@@ -2735,7 +2845,7 @@ int main() {
                 break;
             case 5:
                 clearScreen();
-                menuConfigurations(&configStack, equipmentList);
+                menuConfigurations(&configStack, equipmentList, &sensorStack);
                 clearScreen();
                 break;
             case 0:
@@ -2752,7 +2862,7 @@ int main() {
                 printf("Invalid option. Please try again.\n");
                 break;
         }
-    } while (option != 0);
+    } while (mainOption != 0);
 
     return 0;
 }
