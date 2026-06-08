@@ -2541,6 +2541,58 @@ void clearConfigHistoryOptions(ConfigStack* stack) {
     }
 }
 
+void displayConfigAnalytics(ConfigStack* stack) {
+    if (stack == NULL || stack->top == NULL) {
+        printf("\n[INFO] No data avaliable to generate analytics.\n");
+        return;
+    }
+
+    int ipChanges = 0, locChanges = 0, statusChanges = 0, total = 0;
+    NetworkConfig* current = stack->top;
+
+    while (current != NULL) {
+        if (strcasecmp(current->configType, "IP Address") == 0 || strcasecmp(current->configType, "IP") == 0) ipChanges++;
+        else if (strcasecmp(current->configType, "Location") == 0) locChanges++;
+        else if (strcasecmp(current->configType, "Status") == 0) statusChanges++;
+
+        total++;
+        current = current->next;
+    }
+
+    printf("\n=========================================");
+    printf("\n     CONFIGURATION ANALYTICS  ");
+    printf("\n=========================================");
+    printf("\n  Total Operations Logged: %d", total);
+    printf("\n-----------------------------------------");
+    printf("\n  IP Address Modifications: %d (%.1f%%)", ipChanges, (total > 0 ? (ipChanges * 100.0 / total) : 0));
+    printf("\n  Location Modifications:   %d (%.1f%%)", locChanges, (total > 0 ? (locChanges * 100.0 / total) : 0));
+    printf("\n  Status Modifications:     %d (%.1f%%)", statusChanges, (total > 0 ? (statusChanges * 100.0 / total) : 0));
+    printf("\n=========================================\n");
+}
+
+void checkStackHealth(ConfigStack* stack) {
+    int count = 0;
+    NetworkConfig* current = stack->top;
+
+    while (current != NULL) {
+        count++;
+        current = current->next;
+    }
+
+    printf("\n=========================================");
+    printf("\n          STACK HEALTH & STATUS          ");
+    printf("\n=========================================");
+    printf("\n  Current Nodes in RAM: %d", count);
+    printf("\n  Memory Consumption:   %lu bytes", count * sizeof(NetworkConfig));
+    
+    if (count > 50) {
+        printf("\n  [STATUS] \033[1;33mWARNING: Stack is getting heavy. Consider clearing old logs.\033[0m");
+    } else {
+        printf("\n  [STATUS] \033[1;32mHEALTHY: Memory footprint is optimal.\033[0m");
+    }
+    printf("\n=========================================\n");
+}
+
 void menuConfigurations(ConfigStack* stack, Node* invHead) {
     int option = -1;
 
@@ -2553,6 +2605,9 @@ void menuConfigurations(ConfigStack* stack, Node* invHead) {
         printf("\n  3. View N Most Recent Configurations");
         printf("\n  4. Revert Last Configuration ");
         printf("\n  5. Display Asset's Config History");
+        printf("\n  6. Clear History Logs Registries");
+        printf("\n  7. Display Config Analytics");
+        printf("\n  8. Check Stack Memory Health");
         printf("\n  0. Return to Main Menu");
         printf("\n=========================================");
         printf("\nSelect an option: ");
@@ -2587,6 +2642,13 @@ void menuConfigurations(ConfigStack* stack, Node* invHead) {
             case 6:
                 clearScreen();
                 clearConfigHistoryOptions(stack);
+                break;
+            case 7:
+                clearScreen();
+                displayConfigAnalytics(stack);
+            case 8:
+                clearScreen();
+                checkStackHealth(stack);
                 break;
             case 0:
                 printf("\nReturning to Main Menu");
