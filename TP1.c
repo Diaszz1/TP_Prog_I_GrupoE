@@ -2346,8 +2346,21 @@ void loadConfigsFromBinary(ConfigStack* stack) {
     fclose(file);
 }
 
-void revertLastConfiguration(ConfigStack* stack, Node* invHead) {
+NetworkConfig* popConfig(ConfigStack* stack) {
     if (stack == NULL || stack->top == NULL) {
+        return NULL;
+    }
+
+    NetworkConfig* temp = stack->top;
+    stack->top = stack->top->next;
+    return temp;
+}
+
+void revertLastConfiguration(ConfigStack* stack, Node* invHead) {
+
+    NetworkConfig* toRevert = popConfig(stack);
+
+    if (toRevert == NULL) {
         printf("\n=========================================================================");
         printf("\n                      ROLLBACK / REVERT OPERATION                        ");
         printf("\n=========================================================================");
@@ -2355,8 +2368,6 @@ void revertLastConfiguration(ConfigStack* stack, Node* invHead) {
         printf("\n=========================================================================\n");
         return;
     }
-
-    NetworkConfig* toRevert = stack->top;
 
     printf("\n=========================================================================");
     printf("\n                 ROLLBACK / REVERT OPERATION                        ");
@@ -2379,8 +2390,6 @@ void revertLastConfiguration(ConfigStack* stack, Node* invHead) {
         }
         curr = curr->next;
     }
-
-    stack->top = toRevert->next;
 
     if (restored) {
         printf("\n\033[1;32m[SUCCESS] Configuration change reverted. Asset '%s' %s restored to '%s'.\033[0m\n", 
