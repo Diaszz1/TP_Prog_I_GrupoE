@@ -2450,6 +2450,97 @@ void displayAssetConfigHistory(ConfigStack* stack) {
     printf("\n=================================================================================================================\n");
 }
 
+void clearConfigHistoryOptions(ConfigStack* stack) {
+    if (stack == NULL || stack->top == NULL) {
+        printf("\n=========================================================================");
+        printf("\n                      CLEAR CONFIGURATION LOGS                           ");
+        printf("\n=========================================================================");
+        printf("\n[INFO] Configuration history stack is already empty.");
+        printf("\n=========================================================================\n");
+        return;
+    }
+
+    int choice = 0;
+    printf("\n=========================================");
+    printf("\n          CLEAR HISTORY OPTIONS          ");
+    printf("\n=========================================");
+    printf("\n  1. Clear ALL configuration logs");
+    printf("\n  2. Clear logs for a SPECIFIC equipment");
+    printf("\n  0. Cancel");
+    printf("\n=========================================");
+    printf("\nChoose an option: ");
+
+    if (scanf("%d", &choice) != 1) {
+        while (getchar() != '\n');
+        return;
+    }
+    while (getchar() != '\n');
+
+    if (choice == 0) return;
+
+    if (choice == 1) {
+        char confirm;
+        printf("\n\033[1;31m[WARNING] Are you sure you want to clear ALL logs? (y/n): \033[0m");
+        scanf(" %c", &confirm);
+
+        if (confirm == 'y' || confirm == 'Y') {
+            while (stack->top !=NULL) {
+                NetworkConfig* toFree = popConfig(stack);
+                free(toFree);
+            }
+            remove("configs.bin");
+            printf("\n\033[1;32m[SUCCESS] All configuration logs deleted successfully.\033[0m\n");
+        }
+    }
+
+    else if (choice == 2) {
+        char code[50];
+        printf("\nEnter Equipment Name/Code to clear: ");
+        fgets(code, sizeof(code) ,stdin);
+        code[strcspn(code, "\n")] == 0;
+
+        char confirm;
+        printf("\n\033[1;31m[WARNING] Clear all logs for asset '%s'? (y/n): \033[0m", code);
+        scanf(" %c", &confirm);
+        while (getchar() != '\n');
+
+        if (confirm == 'y' || confirm == 'Y') {
+            ConfigStack tempStack;
+            tempStack.top = NULL;
+            int deletedCount = 0;
+
+            while (stack->top != NULL) {
+                NetworkConfig* current = popConfig(stack);
+
+                if (strcmp(current->equipmentCode, code) == 0) {
+                    free(current);
+                    deletedCount++;
+                } else {
+                    current->next = tempStack.top;
+                    tempStack.top = current;
+                }
+            }
+
+            while (tempStack.top == NULL) {
+                NetworkConfig* movingNode = tempStack.top;
+                tempStack.top = movingNode->next;
+
+                movingNode->next = stack->top;
+                stack->top = movingNode;
+            }
+
+            if (deletedCount > 0) {
+                saveConfigsToBinary(stack);
+                printf("\n\033[1;32m[SUCCESS] Deleted %d log registries for asset '%s'.\033[0m\n", deletedCount, code);
+            } else {
+                printf("\n[INFO] No logs found for asset '%s'. Nothing changed.\n", code);
+            }
+        }
+    } else {
+        printf("[ERROR] Invalid option.\n");
+    }
+}
+
 void menuConfigurations(ConfigStack* stack, Node* invHead) {
     int option = -1;
 
@@ -2492,6 +2583,10 @@ void menuConfigurations(ConfigStack* stack, Node* invHead) {
             case 5:
                 clearScreen();
                 displayAssetConfigHistory(stack);
+                break;
+            case 6:
+                clearScreen();
+                clearConfigHistoryOptions(stack);
                 break;
             case 0:
                 printf("\nReturning to Main Menu");
