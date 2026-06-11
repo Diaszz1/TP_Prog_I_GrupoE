@@ -701,6 +701,24 @@ void searchEquipment(Node* list) {
             }
             current = current->next;
         }
+
+        if (found && current != NULL) {
+            printf("\n>>> Equipment found! Displaying details:\n");
+            printf("--------------------------------------------------\n");
+            printf("  Asset ID:     %d\n", current->data.id);
+            printf("  Name:         %s\n", current->data.name);
+            printf("  Type:         %s\n", current->data.type);
+            printf("  Brand:        %s\n", current->data.brand);
+            printf("  Model:        %s\n", current->data.model);
+            printf("  IP Address:   %s\n", current->data.ip);
+            printf("  MAC Address:  %s\n", current->data.mac);
+            printf("  Location:     %s\n", current->data.location);
+            printf("  Status:       %s\n", current->data.status);
+            printf("  Last Verify:  %s\n", current->data.last_verification);
+            printf("--------------------------------------------------\n");
+        } else {
+            printf("\n>>> No equipment found with ID %d.\n", targetId);
+        }
     }
 
     else if (searchOption == 2) {
@@ -708,12 +726,32 @@ void searchEquipment(Node* list) {
         printf("Enter target IP Address: ");
         readString(targetIP, sizeof(targetIP));
 
+        printf("\n>>> Scanning network for IP: %s...\n", targetIP);
+        
         while (current != NULL) {
             if (strcmp(current->data.ip, targetIP) == 0) {
-                found = 1;
-                break;
+                found++;
+                printf("\n[Match #%d] --------------------------------------\n", found);
+                printf("  Asset ID:     %d\n", current->data.id);
+                printf("  Name:         %s\n", current->data.name);
+                printf("  Type:         %s\n", current->data.type);
+                printf("  Brand:        %s\n", current->data.brand);
+                printf("  Model:        %s\n", current->data.model);
+                printf("  IP Address:   %s\n", current->data.ip);
+                printf("  MAC Address:  %s\n", current->data.mac);
+                printf("  Location:     %s\n", current->data.location);
+                printf("  Status:       %s\n", current->data.status);
+                printf("  Last Verify:  %s\n", current->data.last_verification);
+                printf("--------------------------------------------------\n");
+                
             }
             current = current->next;
+        }
+
+        if (found == 0) {
+            printf("\n>>> No equipment found with IP %s.\n", targetIP);
+        } else {
+            printf("\n>>> Search complete. Found %d asset(s) sharing IP %s.\n", found, targetIP);
         }
     }
 
@@ -729,28 +767,27 @@ void searchEquipment(Node* list) {
             }
             current = current->next;
         }
+
+        if (found && current != NULL) {
+            printf("\n>>> Equipment found! Displaying details:\n");
+            printf("--------------------------------------------------\n");
+            printf("  Asset ID:     %d\n", current->data.id);
+            printf("  Name:         %s\n", current->data.name);
+            printf("  Type:         %s\n", current->data.type);
+            printf("  Brand:        %s\n", current->data.brand);
+            printf("  Model:        %s\n", current->data.model);
+            printf("  IP Address:   %s\n", current->data.ip);
+            printf("  MAC Address:  %s\n", current->data.mac);
+            printf("  Location:     %s\n", current->data.location);
+            printf("  Status:       %s\n", current->data.status);
+            printf("  Last Verify:  %s\n", current->data.last_verification);
+            printf("--------------------------------------------------\n");
+        } else {
+            printf("\n>>> No equipment found with MAC %s.\n", targetMAC);
+        }
     }
     else {
         printf("\nInvalid search option.\n");
-        return;
-    }
-
-    if (found && current != NULL) {
-        printf("\n>>> Equipment found! Displaying details:\n");
-        printf("--------------------------------------------------\n");
-        printf("  Asset ID:     %d\n", current->data.id);
-        printf("  Name:         %s\n", current->data.name);
-        printf("  Type:         %s\n", current->data.type);
-        printf("  Brand:        %s\n", current->data.brand);
-        printf("  Model:        %s\n", current->data.model);
-        printf("  IP Address:   %s\n", current->data.ip);
-        printf("  MAC Address:  %s\n", current->data.mac);
-        printf("  Location:     %s\n", current->data.location);
-        printf("  Status:       %s\n", current->data.status);
-        printf("  Last Verify:  %s\n", current->data.last_verification);
-        printf("--------------------------------------------------\n");
-    } else {
-        printf("\n>>> No equipment found matching the search criteria.\n");
     }
 }
 
