@@ -1355,8 +1355,8 @@ void importSensorReadings(SensorStack* s, IncidentQueue* q) {
         if (line[0] == '#' || line[0] == '\n' || line[0] == '\r') {
             continue;
         }
-        
-        if (strncmp(line, "CODE", 4) == 0 || strncmp(line, "code", 4) == 0) {
+  
+        if (strstr(line, "codigo_sensor") != NULL) {
             continue;
         }
 
@@ -1905,15 +1905,25 @@ void displayCompletedHistory(TechnicalIncident* historyHead) {
     printf("\n=================================================================================================================");
     printf("\n                                         HISTORIC - COMPLETED INCIDENTS                                         ");
     printf("\n=================================================================================================================");
-    printf("\n%-10s %-15s %-15s %-18s %-18s %-10s", "TICKET ID", "TARGET/ASSET", "TYPE", "OPENED AT", "CLOSED AT", "TECHNICIAN");
+    printf("\n%-12s %-30s %-18s %-20s %-20s %-15s", "TICKET ID", "TARGET/ASSET", "TYPE", "OPENED AT", "CLOSED AT", "TECHNICIAN");
     printf("\n-----------------------------------------------------------------------------------------------------------------");
 
     TechnicalIncident* current = historyHead;
     while (current != NULL) {
-        printf("\n#%-9d %-15s %-15s %-18s %-18s %-10s", 
-               current->ticketId, current->targetCode, current->type, current->timestamp, current->closedtimestamp, current->technician);
-        printf("\n  --> %s", current->description);
-        printf("\n-----------------------------------------------------------------------------------------------------------------");
+        char ticketStr[16];
+        sprintf(ticketStr, "#%d", current->ticketId);
+
+        printf("\n%-12s %-30s %-18s %-20s %-20s %-15s", 
+               ticketStr, 
+               current->targetCode, 
+               current->type, 
+               current->timestamp, 
+               current->closedtimestamp, 
+               current->technician);
+        
+        printf("\n  --> Description: %s", current->description);
+        printf("\n-----------------------------------------------------------------------------------------------------------------------");
+        
         current = current->next;
     }
     printf("\n=================================================================================================================\n");
@@ -2475,7 +2485,7 @@ NetworkConfig* popConfig(ConfigStack* stack) {
     return temp;
 }
 
-void revertLastConfiguration(ConfigStack* stack, Node* invHead) {
+void revertLastConfiguration(ConfigStack* stack, Node* invHead, SensorStack* sensorStack) {
     printf("\n=========================================");
     printf("\n     REVERT LAST CONFIGURATION (ROLLBACK) ");
     printf("\n=========================================");
@@ -2488,17 +2498,31 @@ void revertLastConfiguration(ConfigStack* stack, Node* invHead) {
     NetworkConfig* lastLog = stack->top;
 
     Node* curr = invHead;
-    int found = 0;
+    int foundEquipment = 0;
     while (curr != NULL) {
         if (strcmp(curr->data.name, lastLog->equipmentCode) == 0) {
-            found = 1;
+            foundEquipment = 1;
             break;
         }
         curr = curr->next;
     }
 
-    if (!found) {
-        printf("\n[ERROR] Asset '%s' from the last log was not found in the inventory.\n", lastLog->equipmentCode);
+    SensorReading* currSensor = NULL;
+    int foundSensor = 0;
+
+    if (!foundEquipment && sensorStack != NULL) {
+        currSensor = sensorStack->top;
+        while (currSensor != NULL) {
+            if (strcmp(currSensor->code, lastLog->equipmentCode) == 0) {
+                foundSensor = 1;
+                break;
+            }
+            currSensor = currSensor->next;
+        }
+    }
+
+    if (!foundEquipment && !foundSensor) {
+        printf("\n[ERROR] Asset '%s' from the last log was not found in active structures.\n", lastLog->equipmentCode);
         return;
     }
 
@@ -2506,18 +2530,32 @@ void revertLastConfiguration(ConfigStack* stack, Node* invHead) {
     strcpy(typeStr, lastLog->configType);
     strcpy(rollbackVal, lastLog->oldValue);
 
-    if (strcmp(typeStr, "IP Address") == 0) {
-        strcpy(currentVal, curr->data.ip);   
-        strcpy(curr->data.ip, rollbackVal);
-    } else if (strcmp(typeStr, "Location") == 0) {
-        strcpy(currentVal, curr->data.location);
-        strcpy(curr->data.location, rollbackVal);
-    } else if (strcmp(typeStr, "Status") == 0) {
-        strcpy(currentVal, curr->data.status);
-        strcpy(curr->data.status, rollbackVal);
-    } else {
-        printf("\n[ERROR] Unknown configuration parameter type.\n");
-        return;
+    if (foundEquipment) {
+        if (strcmp(typeStr, "IP Address") == 0) {
+            strcpy(currentVal, curr->data.ip);   
+            strcpy(curr->data.ip, rollbackVal);
+        } else if (strcmp(typeStr, "Location") == 0) {
+            strcpy(currentVal, curr->data.location);
+            strcpy(curr->data.location, rollbackVal);
+        } else if (strcmp(typeStr, "Status") == 0) {
+            strcpy(currentVal, curr->data.status);
+            strcpy(curr->data.status, rollbackVal);
+        } else {
+            printf("\n[ERROR] Unknown configuration parameter type for Equipment.\n");
+            return;
+        }
+    } 
+    else if (foundSensor) {
+        if (strcmp(typeStr, "Sensor Value") == 0 || strcmp(typeStr, "Value") == 0) {
+            sprintf(currentVal, "%.2f", currSensor->value);
+            currSensor->value = atof(rollbackVal); // Converte string para float
+        } else if (strcmp(typeStr, "Sensor Status") == 0 || strcmp(typeStr, "Status") == 0) {
+            strcpy(currentVal, currSensor->status);
+            strcpy(currSensor->status, rollbackVal);
+        } else {
+            printf("\n[ERROR] Unknown configuration parameter type for Sensor.\n");
+            return;
+        }
     }
 
     char techName[50] = "SYSTEM (Rollback)";
@@ -2777,7 +2815,7 @@ void menuConfigurations(ConfigStack* stack, Node* invHead, SensorStack* sensorSt
                 break;
             case 4:
                 clearScreen();
-                revertLastConfiguration(stack, invHead);
+                revertLastConfiguration(stack, invHead, sensorStack);
                 break;
             case 5:
                 clearScreen();
@@ -2835,6 +2873,7 @@ int main() {
 
     printf("\nPress Enter to start the application...");
     getchar();
+    clearScreen();
 
     int mainOption = -1;
 
