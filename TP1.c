@@ -1813,9 +1813,6 @@ int fetchSensorDataFromAPI() {
         printf("\n\t" CLR_GREEN "[SUCCESS] Remote cluster synchronized!" CLR_RESET);
         printf("\n\t" CLR_CYAN ">>> Live sensor data pulled into 'sensors_rack.txt'." CLR_RESET "\n");
         
-        printf("\n\tPress Enter to continue...");
-        getchar();
-        clearScreen();
         return 1;
     } else {
         printf("\n\t" CLR_YELLOW "[WARNING] API Endpoint unreachable (HTTP/Timeout Failure)." CLR_RESET);
@@ -2226,6 +2223,23 @@ void createManualIncident(IncidentQueue* q, Node* invHead, SensorStack* s) {
     printf("\n\t" CLR_CYAN "|" CLR_RESET "        " CLR_BOLD "REGISTER MANUAL INCIDENT" CLR_RESET "       " CLR_CYAN "|" CLR_RESET);
     printf("\n\t" CLR_CYAN "+---------------------------------------+" CLR_RESET);
     
+    printf("\n\t " CLR_BOLD "INVENTORY ASSETS:" CLR_RESET);
+    Node* inv = invHead;
+    if (!inv) printf("\n\t  -> No assets registered.");
+    while (inv) {
+        printf("\n\t  > [%-10s] Status: %s", inv->data.name, inv->data.status);
+        inv = inv->next;
+    }
+
+    printf("\n\n\t " CLR_BOLD "SYSTEM SENSORS:" CLR_RESET);
+    SensorReading* sens = (s != NULL) ? s->top : NULL;
+    if (!sens) printf("\n\t  -> No sensors registered.");
+    while (sens) {
+        printf("\n\t  > [%-10s] Value: %.2f %s", sens->code, sens->value, sens->unit);
+        sens = sens->next;
+    }
+    printf("\n\t" CLR_CYAN "+---------------------------------------+" CLR_RESET);
+
     printf("\n\t  Enter Asset/Sensor Name, IP or Code: ");
     fgets(userInput, sizeof(userInput), stdin);
     userInput[strcspn(userInput, "\n")] = 0;
@@ -2339,14 +2353,31 @@ void displayIncidentsByAsset(IncidentQueue* q) {
         return;
     }
 
-    char targetInput[30];
     clearScreen();
     
     printf("\n\t" CLR_CYAN "+---------------------------------------+" CLR_RESET);
     printf("\n\t" CLR_CYAN "|" CLR_RESET "         " CLR_BOLD "FILTER INCIDENTS BY ASSET" CLR_RESET "        " CLR_CYAN "|" CLR_RESET);
     printf("\n\t" CLR_CYAN "+---------------------------------------+" CLR_RESET);
-    printf("\n\t  Enter Asset Name, Code or IP: ");
     
+    printf("\n\t " CLR_BOLD "Assets currently in queue:" CLR_RESET);
+    char seen[50][30]; 
+    int countSeen = 0;
+    TechnicalIncident* temp = q->front;
+    
+    while (temp != NULL) {
+        int alreadyListed = 0;
+        for (int i = 0; i < countSeen; i++) {
+            if (strcmp(seen[i], temp->targetCode) == 0) { alreadyListed = 1; break; }
+        }
+        if (!alreadyListed && countSeen < 50) {
+            printf("\n\t  • %s", temp->targetCode);
+            strcpy(seen[countSeen++], temp->targetCode);
+        }
+        temp = temp->next;
+    }
+
+    char targetInput[30];
+    printf("\n\n\tEnter Asset Name, Code or IP: "); 
     fgets(targetInput, sizeof(targetInput), stdin);
     targetInput[strcspn(targetInput, "\n")] = 0;
     clearScreen();
@@ -2554,78 +2585,56 @@ void menuIncidentReports(IncidentQueue* q, TechnicalIncident** historyHead) {
 
 void processNextIncident(IncidentQueue* q, Node* invHead, TechnicalIncident** historyHead) {
     if (q == NULL || q->front == NULL) {
-        printf("\n=========================================================================");
-        printf("\n                    RESOLUTION & INCIDENT PROCESSING                     ");
-        printf("\n=========================================================================");
-        printf("\n[INFO] No incidents in the queue.");
-        printf("\n=========================================================================\n");
+        clearScreen();
+        printf("\n\t" CLR_YELLOW "[INFO] No incidents in the queue." CLR_RESET "\n");
         return;
     }
 
     TechnicalIncident* activeTicket = q->front;
+    clearScreen();
 
-    printf("\n=========================================================================");
-    printf("\n                 INCIDENT PROCESSING (FIFO)                        ");
-    printf("\n=========================================================================");
-    printf("\n  TICKET ID:    #%d", activeTicket->ticketId);
-    printf("\n  Target/Asset: %s", activeTicket->targetCode);
-    printf("\n  Alert Type:   %s", activeTicket->type);
-    printf("\n  Current Status: [%s]", activeTicket->status);
-    printf("\n  Priority:     %s", activeTicket->priority);
-    printf("\n  Description:  %s", activeTicket->description);
-    printf("\n=========================================================================");
+    printf("\n\t" CLR_CYAN "+---------------------------------------+" CLR_RESET);
+    printf("\n\t" CLR_CYAN "|" CLR_RESET "        " CLR_BOLD "INCIDENT PROCESSING" CLR_RESET "          " CLR_CYAN "|" CLR_RESET);
+    printf("\n\t" CLR_CYAN "+---------------------------------------+" CLR_RESET);
+    printf("\n\t  " CLR_BOLD "Ticket ID:  " CLR_RESET "#%d", activeTicket->ticketId);
+    printf("\n\t  " CLR_BOLD "Asset:      " CLR_RESET "%s", activeTicket->targetCode);
+    printf("\n\t  " CLR_BOLD "Type:       " CLR_RESET "%s", activeTicket->type);
+    printf("\n\t  " CLR_BOLD "Status:     " CLR_RESET "[%s]", activeTicket->status);
+    printf("\n\t  " CLR_BOLD "Priority:   " CLR_RESET "%s", activeTicket->priority);
+    printf("\n\t  " CLR_BOLD "Desc:       " CLR_RESET "%s", activeTicket->description);
+    printf("\n\t" CLR_CYAN "+---------------------------------------+" CLR_RESET);
 
     int choice = -1;
     
     if (strcmp(activeTicket->status, "Pending") == 0) {
-        printf("\nThe next incident in the queue is PENDING.");
-        printf("\n  1. Set incident to IN PROGRESS (Start Handling)");
-        printf("\n  0. Exit without changes");
-        printf("\nChoose an option: ");
-        fflush(stdout);
-
-        if (scanf("%d", &choice) != 1) { while (getchar() != '\n'); return; }
-        while (getchar() != '\n');
+        printf("\n\t1. Start Handling (In Progress)\n\t0. Exit\n\tChoice: ");
+        scanf("%d", &choice); while(getchar() != '\n');
 
         if (choice == 1) {
-            printf("Insert the technician name: ");
+            printf("\tTechnician Name: "); 
             fgets(activeTicket->technician, sizeof(activeTicket->technician), stdin);
             activeTicket->technician[strcspn(activeTicket->technician, "\n")] = 0;
-
             strcpy(activeTicket->status, "In Progress");
-            printf("\n>>> [SUCCESS] Ticket #%d is now 'In Progress'.\n", activeTicket->ticketId);
+            printf("\n\t" CLR_GREEN "[SUCCESS] Ticket #%d now In Progress." CLR_RESET "\n", activeTicket->ticketId);
         }
     } 
     else if (strcmp(activeTicket->status, "In Progress") == 0) {
-        printf("\nThe next incident in the queue is IN PROGRESS.");
-        printf("\n  1. RESOLVE INCIDENT (Move to Completed History)");
-        printf("\n  0. Exit without changes");
-        printf("\nChoose an option: ");
-        fflush(stdout);
-
-        if (scanf("%d", &choice) != 1) { while (getchar() != '\n'); return; }
-        while (getchar() != '\n');
+        printf("\n\t1. RESOLVE INCIDENT (Close Ticket)\n\t0. Exit\n\tChoice: ");
+        scanf("%d", &choice); while(getchar() != '\n');
 
         if (choice == 1) {
             char solution[100];
-            printf("Briefly describe the technical solution applied: ");
-            fflush(stdout);
-            fgets(solution, sizeof(solution), stdin);
+            printf("\tBrief Solution: "); fgets(solution, sizeof(solution), stdin);
             solution[strcspn(solution, "\n")] = 0;
 
-            char finalDesc[120];
-            sprintf(finalDesc, "%s (SOLUCION: %s)", activeTicket->description, solution);
-            strncpy(activeTicket->description, finalDesc, sizeof(activeTicket->description) - 1);
-
+            char finalDesc[200];
+            sprintf(finalDesc, "%s | Sol: %s", activeTicket->description, solution);
+            strncpy(activeTicket->description, finalDesc, sizeof(activeTicket->description)-1);
             strcpy(activeTicket->status, "Completed");
-            
-            getCurrentDateTime(activeTicket->closedtimestamp); 
-
-            char savedTime[20];
-            strcpy(savedTime, activeTicket->closedtimestamp);
+            getCurrentDateTime(activeTicket->closedtimestamp);
 
             Node* currEquip = invHead;
-            while (currEquip != NULL) {
+            while (currEquip) {
                 if (strcmp(currEquip->data.name, activeTicket->targetCode) == 0) {
                     strcpy(currEquip->data.status, "Operational");
                     break;
@@ -2634,17 +2643,16 @@ void processNextIncident(IncidentQueue* q, Node* invHead, TechnicalIncident** hi
             }
 
             q->front = q->front->next;
-            if (q->front == NULL) {
-                q->rear = NULL;
-            }
+            if (q->front == NULL) q->rear = NULL;
 
             activeTicket->next = *historyHead;
             *historyHead = activeTicket;
 
-            printf("\n>>> [SUCCESS] Ticket #%d closed and archived in the Completed History at %s!\n", 
-                   activeTicket->ticketId, savedTime);
+            printf("\n\t" CLR_GREEN "[SUCCESS] Ticket #%d resolved and archived." CLR_RESET "\n", activeTicket->ticketId);
         }
     }
+
+    printf("\n\tPress Enter to return..."); getchar(); clearScreen();
 }
 
 void menuIncidents(IncidentQueue* queue, Node* invHead, SensorStack* sensorStack, TechnicalIncident** historyHead) {
@@ -2707,7 +2715,7 @@ void saveIncidentsToBinary(IncidentQueue* q) {
         return;
     }
 
-    FILE* file = fopen("incidents_back.dat", "wb");
+    FILE* file = fopen("incidents_backup.dat", "wb");
     if (file == NULL) {
         printf("\n\t" CLR_RED "[ERROR] Could not initialize binary backup file." CLR_RESET "\n");
         return;
@@ -2829,76 +2837,72 @@ void registerNewConfiguration(ConfigStack* stack, Node* invHead, SensorStack* se
     printf("\n\t" CLR_CYAN "+---------------------------------------+" CLR_RESET);
 
     printf("\n\t " CLR_BOLD "INVENTORY ASSETS:" CLR_RESET);
-    if (!invHead) printf("\n\t  -> No assets registered.");
-    else {
-        Node* curr = invHead;
-        while (curr) {
-            printf("\n\t  > [%-10s] Location: %s", curr->data.name, curr->data.location);
-            curr = curr->next;
-        }
-    }
+    Node* curr = invHead;
+    if (!curr) printf("\n\t  -> No assets.");
+    while (curr) { printf("\n\t  > [%-10s] Loc: %s", curr->data.name, curr->data.location); curr = curr->next; }
 
     printf("\n\n\t " CLR_BOLD "SYSTEM SENSORS:" CLR_RESET);
-    if (!sensorStack || !sensorStack->top) printf("\n\t  -> No sensors registered.");
-    else {
-        SensorReading* sens = sensorStack->top;
-        while (sens) {
-            printf("\n\t  > [%-10s] Value: %.2f %s", sens->code, sens->value, sens->unit);
-            sens = sens->next;
-        }
-    }
+    SensorReading* sens = (sensorStack) ? sensorStack->top : NULL;
+    if (!sens) printf("\n\t  -> No sensors.");
+    while (sens) { printf("\n\t  > [%-10s] Val: %.2f %s", sens->code, sens->value, sens->unit); sens = sens->next; }
     
-    printf("\n\n\tEnter target Code to modify: ");
+    printf("\n\n\tEnter target Code/Name to modify: ");
     fgets(code, sizeof(code), stdin);
     code[strcspn(code, "\n")] = 0;
 
-    Node* curr = invHead;
-    int found = 0;
-    while (curr) {
-        if (strcmp(curr->data.name, code) == 0) { found = 1; break; }
-        curr = curr->next;
+    Node* asset = invHead;
+    while (asset && strcmp(asset->data.name, code) != 0) asset = asset->next;
+
+    SensorReading* sensor = NULL;
+    if (!asset) {
+        sensor = sensorStack->top;
+        while (sensor && strcmp(sensor->code, code) != 0) sensor = sensor->next;
     }
 
-    SensorReading* targetSensor = NULL;
-    if (!found) {
-        SensorReading* sens = sensorStack->top;
-        while (sens) {
-            if (strcmp(sens->code, code) == 0) { found = 2; targetSensor = sens; break; }
-            sens = sens->next;
-        }
-    }
-
-    if (!found) {
-        printf("\n\t" CLR_RED "[ERROR] Asset/Sensor '%s' not found." CLR_RESET "\n", code);
+    if (!asset && !sensor) {
+        printf("\n\t" CLR_RED "[ERROR] Code '%s' not found." CLR_RESET "\n", code);
         printf("\n\tPress Enter to return..."); getchar(); clearScreen();
         return;
     }
 
-    if (found == 1) {
-        printf("\n\tSelect Parameter:\n\t1. IP Address\n\t2. Location\n\t3. Status\n\tChoice: ");
+    if (asset) {
+        printf("\n\t1. IP Address\n\t2. Location\n\t3. Status\n\tChoice: ");
         scanf("%d", &typeChoice); while(getchar() != '\n');
 
-        if(typeChoice == 1) { strcpy(typeStr, "IP Address"); strcpy(oldVal, curr->data.ip); }
-        else if(typeChoice == 2) { strcpy(typeStr, "Location"); strcpy(oldVal, curr->data.location); }
-        else { strcpy(typeStr, "Status"); strcpy(oldVal, curr->data.status); }
-        
-        printf("\tEnter new value: "); fgets(newVal, sizeof(newVal), stdin); newVal[strcspn(newVal, "\n")] = 0;
-        if(typeChoice == 1) strcpy(curr->data.ip, newVal);
-        else if(typeChoice == 2) strcpy(curr->data.location, newVal);
-        else strcpy(curr->data.status, newVal);
+        if(typeChoice == 1) { strcpy(typeStr, "IP Address"); strcpy(oldVal, asset->data.ip); printf("\tNew IP: "); fgets(newVal, sizeof(newVal), stdin); newVal[strcspn(newVal, "\n")] = 0; strcpy(asset->data.ip, newVal); }
+        else if(typeChoice == 2) { strcpy(typeStr, "Location"); strcpy(oldVal, asset->data.location); printf("\tNew Loc: "); fgets(newVal, sizeof(newVal), stdin); newVal[strcspn(newVal, "\n")] = 0; strcpy(asset->data.location, newVal); }
+        else { strcpy(typeStr, "Status"); strcpy(oldVal, asset->data.status); printf("\tNew Status: "); fgets(newVal, sizeof(newVal), stdin); newVal[strcspn(newVal, "\n")] = 0; strcpy(asset->data.status, newVal); }
     } 
     else {
         printf("\n\t1. Sensor Status\n\t2. Simulated Value\n\tChoice: ");
         scanf("%d", &typeChoice); while(getchar() != '\n');
 
         if(typeChoice == 1) { 
-            strcpy(typeStr, "Status"); strcpy(oldVal, targetSensor->status);
-            printf("\tNew Status: "); fgets(newVal, sizeof(newVal), stdin); newVal[strcspn(newVal, "\n")] = 0;
-            strcpy(targetSensor->status, newVal);
+            strcpy(typeStr, "Status"); 
+            strcpy(oldVal, sensor->status);
+            int st;
+            printf("\n\t1. NORMAL\n\t2. WARNING\n\t3. CRITICAL\n\t4. GRID_FAILURE\n\tChoice: ");
+            scanf("%d", &st); while(getchar() != '\n');
+            switch(st) {
+                case 1: strcpy(newVal, "NORMAL"); break;
+                case 2: strcpy(newVal, "WARNING"); break;
+                case 3: strcpy(newVal, "CRITICAL"); break;
+                case 4: strcpy(newVal, "GRID_FAILURE"); break;
+                default: strcpy(newVal, "NORMAL"); break;
+            }
+
+            if (strcmp(oldVal, newVal) == 0) {
+                printf("\n\t" CLR_RED "[ERROR] Sensor is already in '%s' state." CLR_RESET "\n", newVal);
+                printf("\tPress Enter to return..."); getchar(); clearScreen();
+                return;
+            }
+
+            strcpy(sensor->status, newVal);
         } else {
-            strcpy(typeStr, "Value"); sprintf(oldVal, "%.2f", targetSensor->value);
+            strcpy(typeStr, "Value"); 
+            sprintf(oldVal, "%.2f", sensor->value);
             printf("\tNew Value: "); fgets(newVal, sizeof(newVal), stdin); newVal[strcspn(newVal, "\n")] = 0;
-            targetSensor->value = atof(newVal);
+            sensor->value = atof(newVal);
         }
     }
 
@@ -3332,6 +3336,68 @@ void checkStackHealth(ConfigStack* stack) {
     clearScreen();
 }
 
+void saveSensorsToBinary(SensorStack* s) {
+    if (s == NULL || s->top == NULL) return;
+
+    FILE* file = fopen("sensores.dat", "wb");
+    if (!file) {
+        printf("\n\t" CLR_RED "[ERROR] Could not save sensor state." CLR_RESET "\n");
+        return;
+    }
+
+    SensorReading* current = s->top;
+    while (current != NULL) {
+        fwrite(current, sizeof(SensorReading), 1, file);
+        current = current->next;
+    }
+
+    fclose(file);
+}
+
+int sensorExistsInStack(SensorStack* s, char* code) {
+    SensorReading* curr = s->top;
+    while (curr != NULL) {
+        if (strcmp(curr->code, code) == 0) return 1;
+        curr = curr->next;
+    }
+    return 0;
+}
+
+void loadSensorConfigsFromBinary(SensorStack* s, IncidentQueue* q) {
+    FILE* file = fopen("sensores.dat", "rb");
+    if (file != NULL) {
+        SensorReading temp;
+        while (fread(&temp, sizeof(SensorReading), 1, file) == 1) {
+            pushSensorReading(s, temp);
+        }
+        fclose(file);
+        printf("\n\t" CLR_GREEN "[SUCCESS] State restored from 'sensores.dat'." CLR_RESET "\n");
+    }
+
+    FILE* txt = fopen("sensors_rack.txt", "r");
+    if (txt == NULL) return;
+
+    char line[256];
+    while (fgets(line, sizeof(line), txt)) {
+        if (line[0] == '#' || line[0] == '\n' || strstr(line, "codigo_sensor")) continue;
+
+        SensorReading temp;
+        char* token = strtok(line, ";\n\r");
+        if (!token) continue;
+        strcpy(temp.code, token);
+
+        token = strtok(NULL, ";\n\r"); if (token) strcpy(temp.type, token);
+        token = strtok(NULL, ";\n\r"); if (token) temp.value = atof(token);
+        token = strtok(NULL, ";\n\r"); if (token) strcpy(temp.unit, token);
+        token = strtok(NULL, ";\n\r"); if (token) strcpy(temp.status, token);
+
+        if (!sensorExistsInStack(s, temp.code)) {
+            pushSensorReading(s, temp);
+        }
+    }
+    fclose(txt);
+}
+
 void menuConfigurations(ConfigStack* stack, Node* invHead, SensorStack* sensorStack) {
     int option = -1;
 
@@ -3436,9 +3502,9 @@ int main() {
     incidentQueue.front = NULL;
     incidentQueue.rear = NULL;
 
+    loadSensorConfigsFromBinary(&sensorStack, &incidentQueue);
     loadIncidentsFromBinary(&incidentQueue);
     fetchSensorDataFromAPI();
-    importSensorReadings(&sensorStack, &incidentQueue);
 
     printf("\nPress Enter to start the application...");
     getchar();
@@ -3505,6 +3571,7 @@ int main() {
                 saveIncidentsToBinary(&incidentQueue);
                 saveHistoryToBinary(completedHistory);
                 saveConfigsToBinary(&configStack);
+                saveSensorsToBinary(&sensorStack);
                 printf("\n" CLR_GREEN "[SUCCESS] Exiting program. Goodbye!" CLR_RESET "\n");
                 break;
             default:
