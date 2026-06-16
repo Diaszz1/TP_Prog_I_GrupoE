@@ -1,8 +1,8 @@
-Processed Sensor: TEMP_RACK | Value: 30.20 C | Status: NORMAL
-Processed Sensor: HUM_RACK | Value: 63.00 % | Status: NORMAL
+Processed Sensor: TEMP_RACK | Value: 27.20 C | Status: NORMAL
+Processed Sensor: HUM_RACK | Value: 60.00 % | Status: NORMAL
 Processed Sensor: UPS_BAT | Value: 87.00 % | Status: NORMAL
 Processed Sensor: UPS_ENERGIA | Value: 1.00 - | Status: NORMAL
-Processed Sensor: FAN_RACK | Value: 3051.00 rpm | Status: NORMAL
+Processed Sensor: FAN_RACK | Value: 2788.00 rpm | Status: NORMAL
 Processed Sensor: DOOR_RACK | Value: 0.00 - | Status: NORMAL
 
 ==================================================

@@ -9,11 +9,6 @@ Ethernet adapter Radmin VPN:
    Subnet Mask . . . . . . . . . . . : 255.0.0.0
    Default Gateway . . . . . . . . . : 26.0.0.1
 
-Ethernet adapter Ethernet:
-
-   Media State . . . . . . . . . . . : Media disconnected
-   Connection-specific DNS Suffix  . : 
-
 Ethernet adapter Ethernet 3:
 
    Connection-specific DNS Suffix  . : 
@@ -36,6 +31,13 @@ Wireless LAN adapter Liga‡Æo de µrea Local* 10:
    Media State . . . . . . . . . . . : Media disconnected
    Connection-specific DNS Suffix  . : 
 
+Wireless LAN adapter Wi-Fi 2:
+
+   Connection-specific DNS Suffix  . : home
+   IPv4 Address. . . . . . . . . . . : 192.168.1.8
+   Subnet Mask . . . . . . . . . . . : 255.255.254.0
+   Default Gateway . . . . . . . . . : 192.168.1.1
+
 Ethernet adapter ZeroTier One [bb720a5aae63243e]:
 
    Connection-specific DNS Suffix  . : 
@@ -43,16 +45,14 @@ Ethernet adapter ZeroTier One [bb720a5aae63243e]:
    Subnet Mask . . . . . . . . . . . : 255.255.255.0
    Default Gateway . . . . . . . . . : 25.255.255.254
 
-Wireless LAN adapter Wi-Fi 2:
+Ethernet adapter Ethernet:
 
+   Media State . . . . . . . . . . . : Media disconnected
    Connection-specific DNS Suffix  . : 
-   IPv4 Address. . . . . . . . . . . : 172.16.201.22
-   Subnet Mask . . . . . . . . . . . : 255.255.224.0
-   Default Gateway . . . . . . . . . : 172.16.223.254
 
 Tunnel adapter Teredo Tunneling Pseudo-Interface:
 
    Connection-specific DNS Suffix  . : 
-   IPv6 Address. . . . . . . . . . . : 2001:0:4625:9800:2c61:2620:3e76:beef
-   Link-local IPv6 Address . . . . . : fe80::2c61:2620:3e76:beef%14
+   IPv6 Address. . . . . . . . . . . : 2001:0:4625:9800:842:11ae:a64a:6c9d
+   Link-local IPv6 Address . . . . . : fe80::842:11ae:a64a:6c9d%14
    Default Gateway . . . . . . . . . : ::
