@@ -2827,6 +2827,30 @@ void pushConfiguration(ConfigStack* stack, char* code, char* type, char* oldVal,
     printf("\n\t" CLR_CYAN ">>> Change type: %s | Technician: %s" CLR_RESET "\n", type, tech);
 }
 
+void removeIncidentBySensor(IncidentQueue* q, char* sensorCode) {
+    if (q->front == NULL) return;
+
+    if (strcmp(q->front->targetCode, sensorCode) == 0) { 
+        TechnicalIncident* temp = q->front; // Usa o nome da tua struct
+        q->front = q->front->next;
+        if (q->front == NULL) q->rear = NULL;
+        free(temp);
+        return;
+    }
+
+    TechnicalIncident* curr = q->front;
+    while (curr->next != NULL && strcmp(curr->next->targetCode, sensorCode) != 0) {
+        curr = curr->next;
+    }
+
+    if (curr->next != NULL) {
+        TechnicalIncident* temp = curr->next;
+        curr->next = curr->next->next;
+        if (curr->next == NULL) q->rear = curr;
+        free(temp);
+    }
+}
+
 void registerNewConfiguration(ConfigStack* stack, Node* invHead, SensorStack* sensorStack, IncidentQueue* q) {
     char code[50], typeStr[30], newVal[50], tech[30], oldVal[50] = "";
     int typeChoice = 0;
@@ -2899,12 +2923,12 @@ void registerNewConfiguration(ConfigStack* stack, Node* invHead, SensorStack* se
 
             strcpy(sensor->status, newVal);
 
-            if (strcmp(sensor->status, "WARNING") == 0 || 
-            strcmp(sensor->status, "CRITICAL") == 0 || 
-            strcmp(sensor->status, "GRID_FAILURE") == 0) {
-            
-            enqueueSensorIncident(q, sensor->code, sensor->status);
-            printf("\n\t" CLR_YELLOW "[ALERT] Status change triggered an automatic incident report!" CLR_RESET "\n");
+            if (strcmp(sensor->status, "NORMAL") == 0) {
+                removeIncidentBySensor(q, sensor->code);
+                printf("\n\t" CLR_GREEN "[SUCCESS] Status back to NORMAL. Incident removed." CLR_RESET "\n");
+            } else {
+                enqueueSensorIncident(q, sensor->code, sensor->status);
+                printf("\n\t" CLR_YELLOW "[ALERT] Status change triggered an incident!" CLR_RESET "\n");
             }
         } else {
             strcpy(typeStr, "Value"); 
@@ -3079,7 +3103,7 @@ NetworkConfig* popConfig(ConfigStack* stack) {
     return temp;
 }
 
-void revertLastConfiguration(ConfigStack* stack, Node* invHead, SensorStack* sensorStack) {
+void revertLastConfiguration(ConfigStack* stack, Node* invHead, SensorStack* sensorStack, IncidentQueue* q) {
     if (stack == NULL || stack->top == NULL) {
         printf("\n\t" CLR_RED "[INFO] No configuration history available for rollback." CLR_RESET "\n");
         return;
@@ -3117,8 +3141,19 @@ void revertLastConfiguration(ConfigStack* stack, Node* invHead, SensorStack* sen
         else if (strcmp(lastLog->configType, "Location") == 0) { strcpy(currentVal, curr->data.location); strcpy(curr->data.location, rollbackVal); }
         else { strcpy(currentVal, curr->data.status); strcpy(curr->data.status, rollbackVal); }
     } else {
-        if (strcmp(lastLog->configType, "Value") == 0) { sprintf(currentVal, "%.2f", currSensor->value); currSensor->value = atof(rollbackVal); }
-        else { strcpy(currentVal, currSensor->status); strcpy(currSensor->status, rollbackVal); }
+        if (strcmp(lastLog->configType, "Value") == 0) { 
+            sprintf(currentVal, "%.2f", currSensor->value); 
+            currSensor->value = atof(rollbackVal); 
+        }
+        else { 
+            strcpy(currentVal, currSensor->status); 
+            strcpy(currSensor->status, rollbackVal);
+            
+            if (strcmp(currSensor->status, "NORMAL") == 0) {
+                removeIncidentBySensor(q, currSensor->code);
+                printf("\n\t" CLR_GREEN "[INFO] Rollback to NORMAL. Incident removed." CLR_RESET "\n");
+            }
+        }
     }
 
     stack->top = lastLog->next;
@@ -3452,7 +3487,7 @@ void menuConfigurations(ConfigStack* stack, Node* invHead, SensorStack* sensorSt
                 break;
             case 4:
                 clearScreen();
-                revertLastConfiguration(stack, invHead, sensorStack);
+                revertLastConfiguration(stack, invHead, sensorStack, q);
                 break;
             case 5:
                 clearScreen();
