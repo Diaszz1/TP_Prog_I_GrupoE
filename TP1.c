@@ -3157,12 +3157,10 @@ void revertLastConfiguration(ConfigStack* stack, Node* invHead, SensorStack* sen
     }
 
     stack->top = lastLog->next;
-    free(lastLog); 
-
-    pushConfiguration(stack, lastLog->equipmentCode, lastLog->configType, currentVal, rollbackVal, "SYSTEM_ROLLBACK");
 
     printf("\n\t" CLR_GREEN "[SUCCESS] Rollback applied for: %s" CLR_RESET, lastLog->equipmentCode);
     printf("\n\t" CLR_CYAN "-> Reverted %s from [%s] to [%s]" CLR_RESET "\n", lastLog->configType, currentVal, rollbackVal);
+    free(lastLog);
 }
 
 void displayAssetConfigHistory(ConfigStack* stack) {
