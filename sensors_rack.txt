@@ -1,9 +1,9 @@
 # rack-sensor-simulator-api legacy export
-# day=2026-06-16
+# day=2026-06-18
 codigo_sensor;tipo;valor;unidade;estado
-TEMP_RACK;temperature;23.7;C;NORMAL
-HUM_RACK;humidity;56;%;NORMAL
-UPS_BAT;ups-battery;86;%;NORMAL
+TEMP_RACK;temperature;29.9;C;NORMAL
+HUM_RACK;humidity;63;%;NORMAL
+UPS_BAT;ups-battery;90;%;NORMAL
 UPS_ENERGIA;ups-power;1;-;NORMAL
-FAN_RACK;fan-speed;2158;rpm;NORMAL
+FAN_RACK;fan-speed;3217;rpm;NORMAL
 DOOR_RACK;door-state;0;-;NORMAL

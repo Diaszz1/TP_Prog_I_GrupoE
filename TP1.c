@@ -2827,7 +2827,7 @@ void pushConfiguration(ConfigStack* stack, char* code, char* type, char* oldVal,
     printf("\n\t" CLR_CYAN ">>> Change type: %s | Technician: %s" CLR_RESET "\n", type, tech);
 }
 
-void registerNewConfiguration(ConfigStack* stack, Node* invHead, SensorStack* sensorStack) {
+void registerNewConfiguration(ConfigStack* stack, Node* invHead, SensorStack* sensorStack, IncidentQueue* q) {
     char code[50], typeStr[30], newVal[50], tech[30], oldVal[50] = "";
     int typeChoice = 0;
 
@@ -2898,6 +2898,14 @@ void registerNewConfiguration(ConfigStack* stack, Node* invHead, SensorStack* se
             }
 
             strcpy(sensor->status, newVal);
+
+            if (strcmp(sensor->status, "WARNING") == 0 || 
+            strcmp(sensor->status, "CRITICAL") == 0 || 
+            strcmp(sensor->status, "GRID_FAILURE") == 0) {
+            
+            enqueueSensorIncident(q, sensor->code, sensor->status);
+            printf("\n\t" CLR_YELLOW "[ALERT] Status change triggered an automatic incident report!" CLR_RESET "\n");
+            }
         } else {
             strcpy(typeStr, "Value"); 
             sprintf(oldVal, "%.2f", sensor->value);
@@ -3398,7 +3406,7 @@ void loadSensorConfigsFromBinary(SensorStack* s, IncidentQueue* q) {
     fclose(txt);
 }
 
-void menuConfigurations(ConfigStack* stack, Node* invHead, SensorStack* sensorStack) {
+void menuConfigurations(ConfigStack* stack, Node* invHead, SensorStack* sensorStack, IncidentQueue* q) {
     int option = -1;
 
     do {
@@ -3432,7 +3440,7 @@ void menuConfigurations(ConfigStack* stack, Node* invHead, SensorStack* sensorSt
         switch (option) {
             case 1:
                 clearScreen();
-                registerNewConfiguration(stack, invHead, sensorStack);
+                registerNewConfiguration(stack, invHead, sensorStack, q);
                 break;
             case 2:
                 clearScreen();
@@ -3561,7 +3569,7 @@ int main() {
                 break;
             case 5:
                 clearScreen();
-                menuConfigurations(&configStack, equipmentList, &sensorStack);
+                menuConfigurations(&configStack, equipmentList, &sensorStack, &incidentQueue);
                 clearScreen();
                 break;
             case 0:
